@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% set user = admin %}
+{% block title %}Add historical book{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Add a historical book</h1>
+
+<form method="post" action="/{{ club.slug }}/admin/add-historical/scrape" class="space-y-4 max-w-lg">
+  <div>
+    <label class="block text-sm font-medium mb-1" for="goodreads_url">Goodreads URL (optional)</label>
+    <input id="goodreads_url" name="goodreads_url" type="url"
+      placeholder="https://www.goodreads.com/book/show/..."
+      class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+  </div>
+  <button type="submit"
+    class="bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded px-4 py-2 text-sm">
+    Look up book
+  </button>
+</form>
+{% endblock %}

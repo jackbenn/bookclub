@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Results{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Past selections</h1>
+
+{% if system_results %}
+<ul class="space-y-4 mb-10">
+  {% for entry in system_results %}
+  {% set r = entry.result %}
+  {% set w = r.winning_book %}
+  <li class="bg-white border border-stone-200 rounded-lg px-4 py-3">
+    <div class="text-xs text-stone-400 mb-1 uppercase tracking-wide">
+      {{ r.year }} · {{ r.month | month_name }}
+    </div>
+    <div class="flex items-baseline gap-2">
+      {% if w.goodreads_url %}
+      <a href="{{ w.goodreads_url }}" target="_blank" rel="noopener"
+        class="font-semibold text-lg hover:text-amber-700">{{ w.title }}</a>
+      {% else %}
+      <span class="font-semibold text-lg">{{ w.title }}</span>
+      {% endif %}
+      <span class="text-stone-500 text-sm">by {{ w.author }}</span>
+    </div>
+    {% if entry.runner_ups %}
+    <div class="text-xs text-stone-400 mt-1">
+      Also considered:
+      {% for ru in entry.runner_ups %}
+        {% if ru.goodreads_url %}
+          <a href="{{ ru.goodreads_url }}" target="_blank" rel="noopener"
+            class="hover:text-amber-600 underline">{{ ru.title }}</a>
+        {% else %}
+          {{ ru.title }}
+        {% endif %}
+        {% if not loop.last %}, {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if historical %}
+<h2 class="text-lg font-semibold text-stone-500 mb-3">Earlier reads</h2>
+<ul class="space-y-2">
+  {% for book in historical %}
+  <li class="flex items-baseline gap-2 text-stone-600 text-sm">
+    {% if book.selected_year %}
+    <span class="text-stone-400 text-xs w-16 shrink-0">
+      {{ book.selected_year }}{% if book.selected_month %}/{{ "%02d" | format(book.selected_month) }}{% endif %}
+    </span>
+    {% else %}
+    <span class="text-stone-400 text-xs w-16 shrink-0">—</span>
+    {% endif %}
+    {% if book.goodreads_url %}
+    <a href="{{ book.goodreads_url }}" target="_blank" rel="noopener"
+      class="hover:text-amber-700 font-medium">{{ book.title }}</a>
+    {% else %}
+    <span class="font-medium">{{ book.title }}</span>
+    {% endif %}
+    <span class="text-stone-400">by {{ book.author }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if not system_results and not historical %}
+<p class="text-stone-500">No results yet.</p>
+{% endif %}
+{% endblock %}

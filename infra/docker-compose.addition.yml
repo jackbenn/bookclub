@@ -1,0 +1,18 @@
+# Add this service block to bennetto-infra/docker-compose.yml
+# Also add "bookclub" to the nginx service's depends_on list.
+# Also add "bookclub_data" to the top-level volumes section.
+
+  bookclub:
+    build:
+      context: ./bookclub        # path to this repo as a submodule
+      dockerfile: Dockerfile
+    volumes:
+      - bookclub_data:/data
+    env_file:
+      - ./bookclub.env           # create this file on the server (see below)
+    restart: unless-stopped
+    expose:
+      - "8000"
+
+# In the top-level volumes section, add:
+#   bookclub_data:

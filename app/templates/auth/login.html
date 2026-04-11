@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Log in{% endblock %}
+{% block content %}
+<div class="max-w-sm mx-auto mt-12">
+  <h1 class="text-2xl font-bold mb-6">Log in to {{ club.display_name }}</h1>
+
+  {% if error %}
+  <p class="mb-4 text-red-600 text-sm">{{ error }}</p>
+  {% endif %}
+
+  <form method="post" action="/{{ club.slug }}/auth/login" class="space-y-4">
+    <div>
+      <label class="block text-sm font-medium mb-1" for="email">Work email</label>
+      <input id="email" name="email" type="email" required autofocus
+        class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1" for="display_name">Your name</label>
+      <input id="display_name" name="display_name" type="text" required
+        class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+      <p class="text-xs text-stone-500 mt-1">Used if you're new. Existing members can update their name later.</p>
+    </div>
+    <button type="submit"
+      class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded px-4 py-2 text-sm">
+      Send login link
+    </button>
+  </form>
+</div>
+{% endblock %}

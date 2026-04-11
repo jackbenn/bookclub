@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Verify login{% endblock %}
+{% block content %}
+<div class="max-w-sm mx-auto mt-12">
+  <h1 class="text-2xl font-bold mb-2">Check your email</h1>
+  <p class="text-stone-600 text-sm mb-6">
+    We sent a login link and 6-digit code to <strong>{{ email }}</strong>.
+    Click the link, or enter the code below.
+  </p>
+
+  {% if error %}
+  <p class="mb-4 text-red-600 text-sm">{{ error }}</p>
+  {% endif %}
+
+  <form method="post" action="/{{ club.slug }}/auth/verify" class="space-y-4">
+    <input type="hidden" name="email" value="{{ email }}">
+    <div>
+      <label class="block text-sm font-medium mb-1" for="otp">6-digit code</label>
+      <input id="otp" name="otp" type="text" inputmode="numeric" pattern="\d{6}" maxlength="6"
+        autofocus autocomplete="one-time-code"
+        class="w-full border border-stone-300 rounded px-3 py-2 text-sm tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-amber-400">
+    </div>
+    <button type="submit"
+      class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded px-4 py-2 text-sm">
+      Verify code
+    </button>
+  </form>
+
+  <p class="text-xs text-stone-500 mt-6">
+    Link expires in 30 minutes.
+    <a href="/{{ club.slug }}/auth/login" class="underline hover:text-amber-600">Send a new one</a>.
+  </p>
+</div>
+{% endblock %}

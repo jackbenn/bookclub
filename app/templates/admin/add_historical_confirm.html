@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% set user = admin %}
+{% block title %}Confirm historical book{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Add historical book</h1>
+
+{% if book.error %}
+<p class="text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 text-sm mb-4">
+  {{ book.error }} — please fill in the details manually.
+</p>
+{% endif %}
+
+<form method="post" action="/{{ club.slug }}/admin/add-historical/confirm" class="space-y-4 max-w-lg">
+  <input type="hidden" name="goodreads_url" value="{{ goodreads_url }}">
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Title</label>
+    <input name="title" type="text" required value="{{ book.title or '' }}"
+      class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+  </div>
+  <div>
+    <label class="block text-sm font-medium mb-1">Author</label>
+    <input name="author" type="text" required value="{{ book.author or '' }}"
+      class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+  </div>
+  <div>
+    <label class="block text-sm font-medium mb-1">Pages</label>
+    <input name="page_count" type="number" min="1" value="{{ book.page_count or '' }}"
+      class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+  </div>
+  <div class="flex gap-3">
+    <div>
+      <label class="block text-sm font-medium mb-1">Year read</label>
+      <input name="selected_year" type="number" min="1900" max="2100" placeholder="e.g. 2023"
+        class="w-28 border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Month read</label>
+      <input name="selected_month" type="number" min="1" max="12" placeholder="1–12"
+        class="w-20 border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+    </div>
+  </div>
+  <p class="text-xs text-stone-500">Year and month are optional. Leave blank if unknown.</p>
+
+  <div class="flex gap-3">
+    <button type="submit"
+      class="bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded px-4 py-2 text-sm">
+      Add to history
+    </button>
+    <a href="/{{ club.slug }}/admin/add-historical"
+      class="text-sm text-stone-500 hover:text-stone-700 self-center">← Back</a>
+  </div>
+</form>
+{% endblock %}

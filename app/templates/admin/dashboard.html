@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% set user = admin %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Admin — {{ club.display_name }}</h1>
+
+<!-- Current month status -->
+<section class="bg-white border border-stone-200 rounded-lg px-4 py-4 mb-6">
+  <h2 class="font-semibold mb-3">
+    This month: {{ year }} · {{ month | month_name }}
+  </h2>
+
+  {% if is_skipped %}
+  <p class="text-amber-700 text-sm bg-amber-50 border border-amber-200 rounded px-3 py-2">
+    This month is marked as skipped.
+  </p>
+  {% elif already_finalized %}
+  <p class="text-green-700 text-sm bg-green-50 border border-green-200 rounded px-3 py-2">
+    This month has been finalized. <a href="/{{ club.slug }}/results" class="underline">View results →</a>
+  </p>
+  {% else %}
+  <div class="text-sm text-stone-600 mb-4 space-y-1">
+    <div>Meeting: <strong>{{ meeting_date or "not set" }}</strong></div>
+    <div>Voting closes: <strong>{{ voting_close or "not set" }}</strong></div>
+  </div>
+
+  <div class="flex flex-wrap gap-3">
+    <form method="post" action="/{{ club.slug }}/admin/finalize">
+      <input type="hidden" name="year" value="{{ year }}">
+      <input type="hidden" name="month" value="{{ month }}">
+      <button type="submit"
+        class="bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded px-4 py-2"
+        onclick="return confirm('Finalize this month? This picks the winner and updates all vote weights.')">
+        Finalize this month
+      </button>
+    </form>
+
+    <button onclick="document.getElementById('skip-form').classList.toggle('hidden')"
+      class="text-sm text-stone-500 border border-stone-300 rounded px-4 py-2 hover:bg-stone-50">
+      Skip this month
+    </button>
+
+    <button onclick="document.getElementById('date-form').classList.toggle('hidden')"
+      class="text-sm text-stone-500 border border-stone-300 rounded px-4 py-2 hover:bg-stone-50">
+      Override meeting date
+    </button>
+  </div>
+
+  <form id="skip-form" method="post" action="/{{ club.slug }}/admin/skip-month"
+    class="hidden mt-4 space-y-2 max-w-xs">
+    <input type="hidden" name="year" value="{{ year }}">
+    <input type="hidden" name="month" value="{{ month }}">
+    <input name="notes" type="text" placeholder="Reason (optional)"
+      class="w-full border border-stone-300 rounded px-3 py-1.5 text-sm">
+    <button type="submit" class="text-sm bg-stone-700 text-white rounded px-3 py-1.5">Confirm skip</button>
+  </form>
+
+  <form id="date-form" method="post" action="/{{ club.slug }}/admin/set-meeting-date"
+    class="hidden mt-4 space-y-2 max-w-xs">
+    <input type="hidden" name="year" value="{{ year }}">
+    <input type="hidden" name="month" value="{{ month }}">
+    <input name="meeting_date" type="date" required
+      class="w-full border border-stone-300 rounded px-3 py-1.5 text-sm">
+    <input name="notes" type="text" placeholder="Notes (optional)"
+      class="w-full border border-stone-300 rounded px-3 py-1.5 text-sm">
+    <button type="submit" class="text-sm bg-stone-700 text-white rounded px-3 py-1.5">Save date</button>
+  </form>
+  {% endif %}
+</section>
+
+<!-- Historical book entry -->
+<section class="bg-white border border-stone-200 rounded-lg px-4 py-4 mb-6">
+  <h2 class="font-semibold mb-2">Add a historical book</h2>
+  <p class="text-sm text-stone-500 mb-3">Books read before this system launched.</p>
+  <a href="/{{ club.slug }}/admin/add-historical"
+    class="text-sm text-amber-700 hover:text-amber-900 underline">Add historical book →</a>
+</section>
+
+<!-- Member list -->
+<section class="bg-white border border-stone-200 rounded-lg px-4 py-4">
+  <h2 class="font-semibold mb-3">Members</h2>
+  <ul class="space-y-2">
+    {% for member in members %}
+    <li class="flex items-center gap-3 text-sm">
+      <span class="flex-1">
+        {{ member.display_name }}
+        <span class="text-stone-400">{{ member.email }}</span>
+        {% if member.is_admin %}<span class="text-xs text-amber-700 font-medium ml-1">admin</span>{% endif %}
+      </span>
+      {% if member.id != admin.id %}
+      <form method="post" action="/{{ club.slug }}/admin/members/{{ member.id }}/toggle-admin">
+        <button type="submit" class="text-xs text-stone-500 hover:text-stone-800 underline">
+          {{ "Remove admin" if member.is_admin else "Make admin" }}
+        </button>
+      </form>
+      <form method="post" action="/{{ club.slug }}/admin/members/{{ member.id }}/remove"
+        onsubmit="return confirm('Remove {{ member.display_name }} from the club?')">
+        <button type="submit" class="text-xs text-red-500 hover:text-red-700 underline">Remove</button>
+      </form>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

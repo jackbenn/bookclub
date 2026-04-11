@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Books{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold">Nominated books</h1>
+  <a href="/{{ club.slug }}/books/nominate"
+    class="bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold px-4 py-2 rounded">
+    + Nominate a book
+  </a>
+</div>
+
+<p class="text-sm text-stone-500 mb-6">
+  Mark the books you'd be happy to read. Your selections are private until the month's winner is chosen.
+</p>
+
+{% if books %}
+<ul class="space-y-3">
+  {% for book in books %}
+  <li class="bg-white border border-stone-200 rounded-lg px-4 py-3 flex items-start gap-4">
+    <div class="flex-1 min-w-0">
+      <div class="flex items-baseline gap-2">
+        {% if book.goodreads_url %}
+        <a href="{{ book.goodreads_url }}" target="_blank" rel="noopener"
+          class="font-semibold hover:text-amber-700 truncate">{{ book.title }}</a>
+        {% else %}
+        <span class="font-semibold">{{ book.title }}</span>
+        {% endif %}
+        <span class="text-stone-500 text-sm truncate">by {{ book.author }}</span>
+      </div>
+      {% if book.page_count %}
+      <span class="text-xs text-stone-400">{{ book.page_count }} pages</span>
+      {% endif %}
+    </div>
+    <div data-approval>
+      {% set approved = book.id in approved_ids %}
+      {% include "books/_approval_button.html" %}
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="text-stone-500">No books nominated yet. Be the first!</p>
+{% endif %}
+{% endblock %}
