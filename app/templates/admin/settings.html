@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% set user = admin %}
+{% block title %}Club settings{% endblock %}
+{% block content %}
+<div class="flex items-center gap-4 mb-6">
+  <a href="/{{ club.slug }}/admin" class="text-stone-400 hover:text-stone-600 text-sm">← Admin</a>
+  <h1 class="text-2xl font-bold">Club settings</h1>
+</div>
+
+<form method="post" action="/{{ club.slug }}/admin/settings" class="space-y-6 max-w-lg">
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Display name</label>
+    <input name="display_name" type="text" required value="{{ club.display_name }}"
+      class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Description</label>
+    <textarea name="description" rows="5"
+      class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">{{ club.description or '' }}</textarea>
+    <p class="text-xs text-stone-500 mt-1">Markdown supported. Displayed on the club home page.</p>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Allowed email addresses</label>
+    <textarea name="allowed_emails_text" rows="4"
+      class="w-full border border-stone-300 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-amber-400">{{ allowed_emails_text }}</textarea>
+    <p class="text-xs text-stone-500 mt-1">One per line. Individual addresses that can log in.</p>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Allowed email domains</label>
+    <textarea name="allowed_domains_text" rows="3"
+      class="w-full border border-stone-300 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-amber-400">{{ allowed_domains_text }}</textarea>
+    <p class="text-xs text-stone-500 mt-1">One per line, e.g. <code>example.com</code>. Anyone with a matching address can join.</p>
+  </div>
+
+  <hr class="border-stone-200">
+
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm font-medium mb-1">Meeting week of month</label>
+      <select name="meeting_week"
+        class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+        {% for n, label in [(1,"1st"),(2,"2nd"),(3,"3rd"),(4,"4th"),(5,"5th")] %}
+        <option value="{{ n }}" {{ "selected" if club.meeting_week == n }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Day of week</label>
+      <select name="meeting_weekday"
+        class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+        {% for n, label in [(0,"Monday"),(1,"Tuesday"),(2,"Wednesday"),(3,"Thursday"),(4,"Friday"),(5,"Saturday"),(6,"Sunday")] %}
+        <option value="{{ n }}" {{ "selected" if club.meeting_weekday == n }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Voting closes (days before meeting)</label>
+    <input name="voting_close_days_before" type="number" min="0" max="365"
+      value="{{ club.voting_close_days_before }}"
+      class="w-32 border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Load decay rate</label>
+    <input name="decay_rate" type="number" min="0" max="1" step="0.01"
+      value="{{ club.decay_rate }}"
+      class="w-32 border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+    <p class="text-xs text-stone-500 mt-1">
+      Fraction of load retained each month for active members (0–1). Default 0.85.
+    </p>
+  </div>
+
+  <button type="submit"
+    class="bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded px-4 py-2 text-sm">
+    Save settings
+  </button>
+
+</form>
+{% endblock %}

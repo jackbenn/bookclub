@@ -10,3 +10,4 @@ beautifulsoup4==4.13.4
 itsdangerous==2.2.0
 python-dotenv==1.1.0
 resend==2.10.0
+markdown==3.7

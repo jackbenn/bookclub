@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Members{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Members</h1>
+
+<table class="w-full text-sm">
+  <thead>
+    <tr class="text-left text-stone-500 border-b border-stone-200">
+      <th class="pb-2 font-medium">Name</th>
+      <th class="pb-2 font-medium">Email</th>
+      <th class="pb-2 font-medium">Role</th>
+    </tr>
+  </thead>
+  <tbody class="divide-y divide-stone-100">
+    {% for member in members %}
+    <tr>
+      <td class="py-2 font-medium">{{ member.display_name }}</td>
+      <td class="py-2 text-stone-500">{{ member.email }}</td>
+      <td class="py-2">
+        {% if member.is_admin %}
+        <span class="text-xs bg-amber-100 text-amber-800 rounded-full px-2 py-0.5 font-medium">Admin</span>
+        {% else %}
+        <span class="text-xs text-stone-400">Member</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -41,6 +41,7 @@ class BookClub(Base):
     meeting_week: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
     meeting_weekday: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     voting_close_days_before: Mapped[int] = mapped_column(Integer, nullable=False, default=30)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     users: Mapped[list[User]] = relationship("User", back_populates="club")
     books: Mapped[list[Book]] = relationship("Book", back_populates="club")

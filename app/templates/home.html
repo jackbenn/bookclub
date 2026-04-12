@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="mb-8">
+  <h1 class="text-3xl font-bold mb-4">{{ club.display_name }}</h1>
+  {% if club.description %}
+  <div class="prose prose-stone max-w-none text-stone-700">
+    {{ club.description | markdown }}
+  </div>
+  {% endif %}
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+  <a href="/{{ club.slug }}/books"
+    class="bg-white border border-stone-200 rounded-lg px-5 py-4 hover:border-amber-400 hover:shadow-sm transition">
+    <div class="font-semibold mb-1">Books</div>
+    <div class="text-sm text-stone-500">Browse and vote on nominated books</div>
+  </a>
+  <a href="/{{ club.slug }}/results"
+    class="bg-white border border-stone-200 rounded-lg px-5 py-4 hover:border-amber-400 hover:shadow-sm transition">
+    <div class="font-semibold mb-1">Results</div>
+    <div class="text-sm text-stone-500">Past selections and history</div>
+  </a>
+  <a href="/{{ club.slug }}/members"
+    class="bg-white border border-stone-200 rounded-lg px-5 py-4 hover:border-amber-400 hover:shadow-sm transition">
+    <div class="font-semibold mb-1">Members</div>
+    <div class="text-sm text-stone-500">Who's in the club</div>
+  </a>
+</div>
+{% endblock %}

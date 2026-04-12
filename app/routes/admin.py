@@ -17,6 +17,58 @@ from app.voting import finalize_month
 router = APIRouter(prefix="/{club_slug}/admin", tags=["admin"])
 
 
+# ── Club settings ────────────────────────────────────────────────────────────
+
+@router.get("/settings", response_class=HTMLResponse)
+async def settings_page(
+    request: Request,
+    club: BookClub = Depends(get_club),
+    admin: User = Depends(get_admin_user),
+):
+    allowed_emails = json.loads(club.allowed_emails)
+    allowed_domains = json.loads(club.allowed_domains)
+    return templates.TemplateResponse(
+        "admin/settings.html",
+        {
+            "request": request,
+            "club": club,
+            "admin": admin,
+            "allowed_emails_text": "\n".join(allowed_emails),
+            "allowed_domains_text": "\n".join(allowed_domains),
+        },
+    )
+
+
+@router.post("/settings")
+async def settings_save(
+    request: Request,
+    club_slug: str,
+    display_name: str = Form(...),
+    description: str = Form(""),
+    allowed_emails_text: str = Form(""),
+    allowed_domains_text: str = Form(""),
+    decay_rate: float = Form(...),
+    meeting_week: int = Form(...),
+    meeting_weekday: int = Form(...),
+    voting_close_days_before: int = Form(...),
+    club: BookClub = Depends(get_club),
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    emails = [e.strip().lower() for e in allowed_emails_text.splitlines() if e.strip()]
+    domains = [d.strip().lower() for d in allowed_domains_text.splitlines() if d.strip()]
+    club.display_name = display_name.strip()
+    club.description = description.strip() or None
+    club.allowed_emails = json.dumps(emails)
+    club.allowed_domains = json.dumps(domains)
+    club.decay_rate = max(0.0, min(1.0, decay_rate))
+    club.meeting_week = max(1, min(5, meeting_week))
+    club.meeting_weekday = max(0, min(6, meeting_weekday))
+    club.voting_close_days_before = max(0, voting_close_days_before)
+    await db.commit()
+    return RedirectResponse(url=f"/{club_slug}/admin/settings", status_code=303)
+
+
 @router.get("", response_class=HTMLResponse)
 async def admin_dashboard(
     request: Request,
