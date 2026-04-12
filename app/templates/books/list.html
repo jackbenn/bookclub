@@ -10,7 +10,11 @@
 </div>
 
 <p class="text-sm text-stone-500 mb-6">
-  Mark the books you'd be happy to read. Your selections are private until the month's winner is chosen.
+  {% if voting_close and meeting_date %}
+  The book for the {{ meeting_date | dateformat }} meeting will be chosen on {{ voting_close | dateformat }} at 11:59 PM Pacific time. Mark the books you'd be happy to read.
+  {% else %}
+  Mark the books you'd be happy to read.
+  {% endif %}
 </p>
 
 {% if books %}
