@@ -1,7 +1,6 @@
 import calendar
 
 from fastapi import FastAPI, Request
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -11,8 +10,6 @@ from app.routes import auth, books, voting, results, admin
 app = FastAPI(title="Book Club")
 
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, max_age=60 * 60 * 24 * 30)
-
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 app.include_router(auth.router)
 app.include_router(books.router)
