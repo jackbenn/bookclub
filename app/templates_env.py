@@ -1,6 +1,6 @@
 import calendar
 import markdown as md
-from jinja2 import Markup
+from markupsafe import Markup
 from fastapi.templating import Jinja2Templates
 
 templates = Jinja2Templates(directory="app/templates")
