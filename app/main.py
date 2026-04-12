@@ -1,10 +1,8 @@
-import calendar
-
 from fastapi import FastAPI, Request
-from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import SECRET_KEY
+from app.templates_env import templates
 from app.routes import auth, books, voting, results, admin
 
 app = FastAPI(title="Book Club")
@@ -16,9 +14,6 @@ app.include_router(books.router)
 app.include_router(voting.router)
 app.include_router(results.router)
 app.include_router(admin.router)
-
-templates = Jinja2Templates(directory="app/templates")
-templates.env.filters["month_name"] = lambda m: calendar.month_name[m]
 
 
 @app.get("/")

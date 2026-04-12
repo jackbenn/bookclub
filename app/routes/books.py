@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,9 +9,9 @@ from app.database import get_db
 from app.dependencies import get_club, get_current_user
 from app.models import Approval, Book, BookClub, BookStatus, User
 from app.scraper import scrape_goodreads
+from app.templates_env import templates
 
 router = APIRouter(prefix="/{club_slug}/books", tags=["books"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("", response_class=HTMLResponse)

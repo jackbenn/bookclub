@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,9 +15,9 @@ from app.auth_utils import (
 from app.database import get_db
 from app.dependencies import get_club
 from app.models import BookClub, User
+from app.templates_env import templates
 
 router = APIRouter(prefix="/{club_slug}/auth", tags=["auth"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/login", response_class=HTMLResponse)

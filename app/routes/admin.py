@@ -3,7 +3,6 @@ from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,10 +11,10 @@ from app.dates import compute_meeting_date, compute_voting_close
 from app.dependencies import get_admin_user, get_club
 from app.models import Book, BookClub, BookStatus, MonthlyResult, MonthlySettings, User
 from app.scraper import scrape_goodreads
+from app.templates_env import templates
 from app.voting import finalize_month
 
 router = APIRouter(prefix="/{club_slug}/admin", tags=["admin"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("", response_class=HTMLResponse)

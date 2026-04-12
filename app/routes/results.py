@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,9 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies import get_club, get_current_user
 from app.models import Book, BookClub, BookStatus, MonthlyResult, User
+from app.templates_env import templates
 
 router = APIRouter(prefix="/{club_slug}/results", tags=["results"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("", response_class=HTMLResponse)
