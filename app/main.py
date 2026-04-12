@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request
+from fastapi.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import SECRET_KEY
@@ -19,3 +20,8 @@ app.include_router(admin.router)
 @app.get("/")
 async def root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
+
+@app.get("/{club_slug}")
+async def club_root(club_slug: str):
+    return RedirectResponse(url=f"/{club_slug}/books", status_code=302)
