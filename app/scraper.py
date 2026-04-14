@@ -3,6 +3,17 @@
 import re
 from dataclasses import dataclass
 
+
+def canonicalize_goodreads_url(url: str) -> str | None:
+    """Strip slug after the numeric ID: /book/show/123456.Title -> /book/show/123456"""
+    if not url:
+        return None
+    url = url.strip()
+    m = re.search(r"goodreads\.com/book/show/(\d+)", url)
+    if m:
+        return f"https://www.goodreads.com/book/show/{m.group(1)}"
+    return url
+
 import httpx
 from bs4 import BeautifulSoup
 

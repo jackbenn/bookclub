@@ -9,7 +9,8 @@ from app.database import get_db
 from app.dates import compute_meeting_date, compute_voting_close
 from app.dependencies import get_club, get_current_user
 from app.models import Approval, Book, BookClub, BookStatus, MonthlyResult, MonthlySettings, User
-from app.scraper import scrape_goodreads
+from app.scraper import canonicalize_goodreads_url, scrape_goodreads
+from sqlalchemy import func
 from app.templates_env import templates
 
 router = APIRouter(prefix="/{club_slug}/books", tags=["books"])
@@ -83,6 +84,34 @@ async def book_list(
     )
 
 
+async def _find_duplicate(club_id: int, goodreads_url: str | None, title: str, db: AsyncSession) -> Book | None:
+    """Return an existing book if one matches by canonical URL or title."""
+    canonical = canonicalize_goodreads_url(goodreads_url) if goodreads_url else None
+    if canonical:
+        result = await db.execute(
+            select(Book).where(Book.club_id == club_id, Book.goodreads_url == canonical)
+        )
+        existing = result.scalar_one_or_none()
+        if existing:
+            return existing
+    result = await db.execute(
+        select(Book).where(
+            Book.club_id == club_id,
+            func.lower(Book.title) == title.strip().lower(),
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+def _duplicate_message(book: Book) -> str:
+    if book.status == BookStatus.active:
+        return f'"{book.title}" is already nominated.'
+    elif book.status == BookStatus.selected:
+        return f'"{book.title}" was already selected as a past winner.'
+    else:
+        return f'"{book.title}" is already in the club\'s history.'
+
+
 @router.get("/nominate", response_class=HTMLResponse)
 async def nominate_page(
     request: Request,
@@ -95,20 +124,30 @@ async def nominate_page(
 @router.post("/nominate/scrape", response_class=HTMLResponse)
 async def nominate_scrape(
     request: Request,
-    club_slug: str,
     goodreads_url: str = Form(...),
     club: BookClub = Depends(get_club),
     user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Scrape the Goodreads URL and return a pre-filled confirm form."""
-    data = await scrape_goodreads(goodreads_url.strip())
+    canonical = canonicalize_goodreads_url(goodreads_url.strip())
+    duplicate = await _find_duplicate(club.id, canonical, "", db) if canonical else None
+
+    # Check by URL only at scrape step (title not known yet)
+    if duplicate:
+        return templates.TemplateResponse(
+            "books/nominate.html",
+            {"request": request, "club": club, "user": user, "error": _duplicate_message(duplicate)},
+            status_code=400,
+        )
+
+    data = await scrape_goodreads(canonical or goodreads_url.strip())
     return templates.TemplateResponse(
         "books/nominate_confirm.html",
         {
             "request": request,
             "club": club,
             "user": user,
-            "goodreads_url": goodreads_url.strip(),
+            "goodreads_url": canonical or goodreads_url.strip(),
             "book": data,
         },
     )
@@ -126,20 +165,35 @@ async def nominate_confirm(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    pages = int(page_count) if page_count.strip().isdigit() else None
+    canonical = canonicalize_goodreads_url(goodreads_url) if goodreads_url else None
+    duplicate = await _find_duplicate(club.id, canonical, title, db)
+    if duplicate:
+        return templates.TemplateResponse(
+            "books/nominate_confirm.html",
+            {
+                "request": request,
+                "club": club,
+                "user": user,
+                "goodreads_url": canonical or goodreads_url,
+                "book": type("B", (), {"title": title, "author": author, "page_count": page_count, "error": None})(),
+                "error": _duplicate_message(duplicate),
+            },
+            status_code=400,
+        )
+
+    pages = int(page_count) if str(page_count).strip().isdigit() else None
     book = Book(
         club_id=club.id,
         title=title.strip(),
         author=author.strip(),
         page_count=pages,
-        goodreads_url=goodreads_url.strip() or None,
+        goodreads_url=canonical or None,
         nominated_by_id=user.id,
         nominated_at=datetime.now(timezone.utc),
         status=BookStatus.active,
     )
     db.add(book)
     await db.flush()
-    # Auto-approve for the nominator
     db.add(Approval(user_id=user.id, book_id=book.id))
     await db.commit()
     return RedirectResponse(url=f"/{club_slug}/books", status_code=303)
