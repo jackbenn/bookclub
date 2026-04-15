@@ -1,0 +1,38 @@
+{% extends "site/base.html" %}
+{% block title %}Book Club{% endblock %}
+{% block content %}
+<div class="mb-10">
+  <h1 class="text-4xl font-bold mb-3">Book Club</h1>
+  <p class="text-stone-600 text-lg max-w-xl">
+    A smarter way to choose what to read together — one that gives everyone a fair say over time, not just the loudest voices.
+  </p>
+</div>
+
+{% if clubs %}
+<h2 class="text-lg font-semibold mb-3">Clubs on this server</h2>
+<ul class="space-y-3 mb-10">
+  {% for club in clubs %}
+  <li>
+    <a href="/{{ club.slug }}/"
+      class="block bg-white border border-stone-200 rounded-lg px-4 py-3 hover:border-stone-400 hover:shadow-sm transition">
+      <div class="font-semibold">{{ club.display_name }}</div>
+      {% if club.description %}
+      <div class="text-sm text-stone-500 mt-0.5 line-clamp-2">{{ club.description }}</div>
+      {% endif %}
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<div class="flex gap-4">
+  <a href="/how-it-works"
+    class="text-sm text-stone-600 border border-stone-300 rounded px-4 py-2 hover:bg-stone-100">
+    How it works →
+  </a>
+  <a href="/new-club"
+    class="text-sm bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded px-4 py-2">
+    Create a club
+  </a>
+</div>
+{% endblock %}

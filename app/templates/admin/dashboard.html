@@ -1,20 +1,13 @@
 {% extends "base.html" %}
 {% set user = admin %}
+{% set c = club.accent_color %}
 {% block title %}Admin{% endblock %}
 {% block content %}
-<div class="flex items-center justify-between mb-6">
-  <h1 class="text-2xl font-bold">Admin — {{ club.display_name }}</h1>
-  <a href="/{{ club.slug }}/admin/settings"
-    class="text-sm text-stone-500 border border-stone-300 rounded px-3 py-1.5 hover:bg-stone-50">
-    Club settings
-  </a>
-</div>
+<h1 class="text-2xl font-bold mb-6">Admin — {{ club.display_name }}</h1>
 
-<!-- Current month status -->
-<section class="bg-white border border-stone-200 rounded-lg px-4 py-4 mb-6">
-  <h2 class="font-semibold mb-3">
-    This month: {{ year }} · {{ month | month_name }}
-  </h2>
+<!-- ── This month ─────────────────────────────────────────────────────────── -->
+<section class="bg-white border border-stone-200 rounded-lg px-5 py-4 mb-5">
+  <h2 class="font-semibold mb-3">This month: {{ year }} · {{ month | month_name }}</h2>
 
   {% if is_skipped %}
   <p class="text-amber-700 text-sm bg-amber-50 border border-amber-200 rounded px-3 py-2">
@@ -26,32 +19,28 @@
   </p>
   {% else %}
   <div class="text-sm text-stone-600 mb-4 space-y-1">
-    <div>Meeting: <strong>{{ meeting_date or "not set" }}</strong></div>
-    <div>Voting closes: <strong>{{ voting_close or "not set" }}</strong></div>
+    <div>Meeting: <strong>{{ meeting_date | dateformat if meeting_date else "not set" }}</strong></div>
+    <div>Voting closes: <strong>{{ voting_close | dateformat if voting_close else "not set" }}</strong></div>
   </div>
-
   <div class="flex flex-wrap gap-3">
     <form method="post" action="/{{ club.slug }}/admin/finalize">
       <input type="hidden" name="year" value="{{ year }}">
       <input type="hidden" name="month" value="{{ month }}">
       <button type="submit"
-        class="bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded px-4 py-2"
+        class="bg-{{ c }}-500 hover:bg-{{ c }}-600 text-white text-sm font-semibold rounded px-4 py-2"
         onclick="return confirm('Finalize this month? This picks the winner and updates all vote weights.')">
         Finalize this month
       </button>
     </form>
-
     <button onclick="document.getElementById('skip-form').classList.toggle('hidden')"
       class="text-sm text-stone-500 border border-stone-300 rounded px-4 py-2 hover:bg-stone-50">
       Skip this month
     </button>
-
     <button onclick="document.getElementById('date-form').classList.toggle('hidden')"
       class="text-sm text-stone-500 border border-stone-300 rounded px-4 py-2 hover:bg-stone-50">
       Override meeting date
     </button>
   </div>
-
   <form id="skip-form" method="post" action="/{{ club.slug }}/admin/skip-month"
     class="hidden mt-4 space-y-2 max-w-xs">
     <input type="hidden" name="year" value="{{ year }}">
@@ -60,7 +49,6 @@
       class="w-full border border-stone-300 rounded px-3 py-1.5 text-sm">
     <button type="submit" class="text-sm bg-stone-700 text-white rounded px-3 py-1.5">Confirm skip</button>
   </form>
-
   <form id="date-form" method="post" action="/{{ club.slug }}/admin/set-meeting-date"
     class="hidden mt-4 space-y-2 max-w-xs">
     <input type="hidden" name="year" value="{{ year }}">
@@ -74,41 +62,144 @@
   {% endif %}
 </section>
 
-<!-- Historical book entry -->
-<section class="bg-white border border-stone-200 rounded-lg px-4 py-4 mb-6">
-  <h2 class="font-semibold mb-2">Add a historical book</h2>
-  <p class="text-sm text-stone-500 mb-3">Books read before this system launched.</p>
-  <a href="/{{ club.slug }}/admin/add-historical"
-    class="text-sm text-amber-700 hover:text-amber-900 underline">Add historical book →</a>
+<!-- ── Members ────────────────────────────────────────────────────────────── -->
+<section class="bg-white border border-stone-200 rounded-lg px-5 py-4 mb-5">
+  <h2 class="font-semibold mb-3">Members</h2>
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="text-left text-stone-400 border-b border-stone-100">
+        <th class="pb-2 font-medium">Name</th>
+        <th class="pb-2 font-medium">Email</th>
+        <th class="pb-2 font-medium">Role</th>
+        <th class="pb-2"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-stone-100">
+      {% for member in members %}
+      <tr>
+        <td class="py-1.5 font-medium">{{ member.display_name }}</td>
+        <td class="py-1.5 text-stone-500">{{ member.email }}</td>
+        <td class="py-1.5">
+          {% if member.is_admin %}
+          <span class="text-xs bg-{{ c }}-100 text-{{ c }}-800 rounded-full px-2 py-0.5 font-medium">Admin</span>
+          {% else %}
+          <span class="text-xs text-stone-400">Member</span>
+          {% endif %}
+        </td>
+        <td class="py-1.5 text-right">
+          {% if member.id != admin.id %}
+          <form method="post" action="/{{ club.slug }}/admin/members/{{ member.id }}/toggle-admin" class="inline">
+            <button class="text-xs text-stone-400 hover:text-stone-700 underline mr-3">
+              {{ "Remove admin" if member.is_admin else "Make admin" }}
+            </button>
+          </form>
+          <form method="post" action="/{{ club.slug }}/admin/members/{{ member.id }}/remove" class="inline"
+            onsubmit="return confirm('Remove {{ member.display_name }} from the club?')">
+            <button class="text-xs text-red-400 hover:text-red-600 underline">Remove</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </section>
 
-<!-- Member list -->
-<section class="bg-white border border-stone-200 rounded-lg px-4 py-4">
-  <div class="flex items-center justify-between mb-3">
-    <h2 class="font-semibold">Members</h2>
-    <a href="/{{ club.slug }}/members" class="text-xs text-stone-400 hover:text-stone-600">View members page →</a>
-  </div>
-  <ul class="space-y-2">
-    {% for member in members %}
-    <li class="flex items-center gap-3 text-sm">
-      <span class="flex-1">
-        {{ member.display_name }}
-        <span class="text-stone-400">{{ member.email }}</span>
-        {% if member.is_admin %}<span class="text-xs text-amber-700 font-medium ml-1">admin</span>{% endif %}
-      </span>
-      {% if member.id != admin.id %}
-      <form method="post" action="/{{ club.slug }}/admin/members/{{ member.id }}/toggle-admin">
-        <button type="submit" class="text-xs text-stone-500 hover:text-stone-800 underline">
-          {{ "Remove admin" if member.is_admin else "Make admin" }}
-        </button>
-      </form>
-      <form method="post" action="/{{ club.slug }}/admin/members/{{ member.id }}/remove"
-        onsubmit="return confirm('Remove {{ member.display_name }} from the club?')">
-        <button type="submit" class="text-xs text-red-500 hover:text-red-700 underline">Remove</button>
-      </form>
-      {% endif %}
-    </li>
-    {% endfor %}
-  </ul>
+<!-- ── Historical books ───────────────────────────────────────────────────── -->
+<section class="bg-white border border-stone-200 rounded-lg px-5 py-4 mb-5">
+  <h2 class="font-semibold mb-1">Historical books</h2>
+  <p class="text-sm text-stone-500 mb-3">Add books read before this system launched.</p>
+  <a href="/{{ club.slug }}/admin/add-historical"
+    class="text-sm text-{{ c }}-700 hover:text-{{ c }}-900 underline">Add historical book →</a>
+</section>
+
+<!-- ── Club settings ──────────────────────────────────────────────────────── -->
+<section class="bg-white border border-stone-200 rounded-lg px-5 py-4">
+  <h2 class="font-semibold mb-4">Club settings</h2>
+  <form method="post" action="/{{ club.slug }}/admin/settings" class="space-y-5">
+
+    <div class="grid grid-cols-2 gap-4">
+      <div class="col-span-2">
+        <label class="block text-sm font-medium mb-1">Display name</label>
+        <input name="display_name" type="text" required value="{{ club.display_name }}"
+          class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-{{ c }}-400">
+      </div>
+
+      <div class="col-span-2">
+        <label class="block text-sm font-medium mb-1">Description</label>
+        <textarea name="description" rows="4"
+          class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-{{ c }}-400">{{ club.description or '' }}</textarea>
+        <p class="text-xs text-stone-500 mt-1">Markdown supported. Shown on the club home page.</p>
+      </div>
+
+      <div class="col-span-2">
+        <label class="block text-sm font-medium mb-2">Accent color</label>
+        <div class="flex flex-wrap gap-2">
+          {% for value, label in accent_colors %}
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input type="radio" name="accent_color" value="{{ value }}"
+              {{ "checked" if club.accent_color == value }}
+              class="sr-only peer">
+            <span class="w-6 h-6 rounded-full bg-{{ value }}-500 ring-2 ring-offset-1 ring-transparent peer-checked:ring-{{ value }}-500"></span>
+            <span class="text-xs text-stone-600">{{ label }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="col-span-2">
+        <label class="block text-sm font-medium mb-1">Allowed email domains</label>
+        <textarea name="allowed_domains_text" rows="3"
+          class="w-full border border-stone-300 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-{{ c }}-400">{{ allowed_domains_text }}</textarea>
+        <p class="text-xs text-stone-500 mt-1">One per line, e.g. <code>example.com</code></p>
+      </div>
+
+      <div class="col-span-2">
+        <label class="block text-sm font-medium mb-1">Allowed individual emails</label>
+        <textarea name="allowed_emails_text" rows="3"
+          class="w-full border border-stone-300 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-{{ c }}-400">{{ allowed_emails_text }}</textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1">Meeting week of month</label>
+        <select name="meeting_week"
+          class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-{{ c }}-400">
+          {% for n, label in [(1,"1st"),(2,"2nd"),(3,"3rd"),(4,"4th"),(5,"5th")] %}
+          <option value="{{ n }}" {{ "selected" if club.meeting_week == n }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1">Day of week</label>
+        <select name="meeting_weekday"
+          class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-{{ c }}-400">
+          {% for n, label in [(0,"Monday"),(1,"Tuesday"),(2,"Wednesday"),(3,"Thursday"),(4,"Friday"),(5,"Saturday"),(6,"Sunday")] %}
+          <option value="{{ n }}" {{ "selected" if club.meeting_weekday == n }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1">Voting closes (days before meeting)</label>
+        <input name="voting_close_days_before" type="number" min="0" max="365"
+          value="{{ club.voting_close_days_before }}"
+          class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-{{ c }}-400">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1">Load decay rate</label>
+        <input name="decay_rate" type="number" min="0" max="1" step="0.01"
+          value="{{ club.decay_rate }}"
+          class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-{{ c }}-400">
+        <p class="text-xs text-stone-500 mt-1">0–1, default 0.85</p>
+      </div>
+    </div>
+
+    <button type="submit"
+      class="bg-{{ c }}-500 hover:bg-{{ c }}-600 text-white font-semibold rounded px-4 py-2 text-sm">
+      Save settings
+    </button>
+  </form>
 </section>
 {% endblock %}

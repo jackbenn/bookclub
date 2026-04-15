@@ -1,0 +1,66 @@
+{% extends "site/base.html" %}
+{% block title %}Create a club{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Create a new book club</h1>
+
+{% if error %}
+<p class="mb-4 text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2 text-sm">{{ error }}</p>
+{% endif %}
+
+<form method="post" action="/new-club" class="space-y-5 max-w-lg">
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Club name</label>
+    <input name="display_name" type="text" required value="{{ form.display_name or '' }}"
+      class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">URL slug</label>
+    <div class="flex items-center gap-2">
+      <span class="text-stone-400 text-sm">bookclub.bennetto.com/</span>
+      <input name="slug" type="text" required pattern="[a-z0-9-]+" value="{{ form.slug or '' }}"
+        placeholder="my-book-club"
+        class="flex-1 border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+    </div>
+    <p class="text-xs text-stone-500 mt-1">Lowercase letters, numbers, and hyphens only.</p>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Description <span class="text-stone-400 font-normal">(optional)</span></label>
+    <textarea name="description" rows="3"
+      class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">{{ form.description or '' }}</textarea>
+    <p class="text-xs text-stone-500 mt-1">Markdown supported.</p>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Allowed email domains</label>
+    <textarea name="allowed_domains_text" rows="2" placeholder="example.com"
+      class="w-full border border-stone-300 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-amber-400">{{ form.allowed_domains_text or '' }}</textarea>
+    <p class="text-xs text-stone-500 mt-1">One per line. Anyone with a matching address can join.</p>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Allowed individual emails <span class="text-stone-400 font-normal">(optional)</span></label>
+    <textarea name="allowed_emails_text" rows="2"
+      class="w-full border border-stone-300 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-amber-400">{{ form.allowed_emails_text or '' }}</textarea>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Your email <span class="text-stone-400 font-normal">(becomes the first admin)</span></label>
+    <input name="admin_email" type="email" required value="{{ form.admin_email or '' }}"
+      class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Your name</label>
+    <input name="admin_name" type="text" required value="{{ form.admin_name or '' }}"
+      class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+  </div>
+
+  <button type="submit"
+    class="bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded px-4 py-2 text-sm">
+    Create club
+  </button>
+</form>
+{% endblock %}

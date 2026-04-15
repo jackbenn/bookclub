@@ -1,0 +1,86 @@
+{% extends "site/base.html" %}
+{% block title %}How it works{% endblock %}
+{% block content %}
+<h1 class="text-3xl font-bold mb-2">How book selection works</h1>
+<p class="text-stone-500 mb-8">The short version: it's fair, it's private, and it's designed to make sure everyone gets a pick eventually.</p>
+
+<div class="space-y-8 text-stone-700 leading-relaxed">
+
+  <section>
+    <h2 class="text-xl font-semibold text-stone-900 mb-2">The problem with simple voting</h2>
+    <p>
+      If you just ask everyone to vote for one book and pick the winner each month, the majority always wins.
+      That sounds fair, but in a club with diverse tastes it means the minority never gets to read what they want.
+      After six months, some people have loved every pick and others have hated all of them.
+      That's not great for a club you want people to stay in.
+    </p>
+  </section>
+
+  <section>
+    <h2 class="text-xl font-semibold text-stone-900 mb-2">What we do instead: mark what you'd read</h2>
+    <p>
+      Instead of voting for one book, you mark every book you'd be genuinely happy reading.
+      You can mark as many as you like — there's no strategy to it, no reason to be cagey.
+      More marks never hurt you.
+    </p>
+    <p class="mt-2">
+      Your marks stay private until the month's winner is announced.
+      That way nobody can game the system by waiting to see what's popular and piling on at the last minute.
+    </p>
+  </section>
+
+  <section>
+    <h2 class="text-xl font-semibold text-stone-900 mb-2">How the winner is chosen: the balance of debt</h2>
+    <p>
+      Here's the key idea: every member has an <em>influence weight</em> that changes over time.
+      When you join, your weight is 1.0 — full influence.
+      When a book you marked gets selected, your weight goes down a little (the system notes that
+      you got something you wanted). When other people's picks keep winning and yours don't, your
+      weight gradually increases.
+    </p>
+    <p class="mt-2">
+      Each month, every book's score is the <em>sum of the weights</em> of the members who marked it.
+      The book with the highest score wins. Then the weights are updated and we go again.
+    </p>
+    <p class="mt-2">
+      Over time this means everyone gets roughly their fair share of wins — in proportion to
+      how many people share their taste, not just who shouts loudest. A minority of three members
+      with similar taste will see their picks chosen about as often as you'd expect for a group of three.
+    </p>
+    <p class="mt-2 text-sm text-stone-500">
+      For the curious: this is a variant of <a href="https://en.wikipedia.org/wiki/Phragm%C3%A9n%27s_voting_rules" class="underline hover:text-stone-700" target="_blank">Phragmén's sequential method</a>,
+      a proportional voting rule with strong fairness guarantees.
+    </p>
+  </section>
+
+  <section>
+    <h2 class="text-xl font-semibold text-stone-900 mb-2">What about people who stop coming?</h2>
+    <p>
+      If you show up and participate each month, your influence weight slowly recovers after wins —
+      you stay in the game. If you stop participating, your weight stays frozen wherever it was.
+      It doesn't keep recovering, so people who've drifted away don't accumulate a growing pile of
+      influence that steers the club months after they've left.
+    </p>
+  </section>
+
+  <section>
+    <h2 class="text-xl font-semibold text-stone-900 mb-2">Tiebreakers</h2>
+    <p>
+      Ties are rare once the system has been running for a few months, but when they happen:
+      first we look at raw approval count (more people marked it), then page count (shorter wins —
+      fewer barriers to finishing), then how long ago it was nominated (older nominations win,
+      as a reward for patience).
+    </p>
+  </section>
+
+  <section>
+    <h2 class="text-xl font-semibold text-stone-900 mb-2">After the pick</h2>
+    <p>
+      Once the month's book is chosen, the full results are revealed: the winner and the two
+      runners-up. You'll know what was close — useful context for next month's voting, but
+      the weights have already shifted so it's not a reliable guide to gaming anything.
+    </p>
+  </section>
+
+</div>
+{% endblock %}

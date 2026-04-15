@@ -9,15 +9,16 @@
 </head>
 <body class="bg-stone-50 text-stone-900 min-h-screen">
 
-  <nav class="bg-stone-800 text-stone-100 px-6 py-3 flex items-center gap-6">
-    <a href="/{{ club.slug }}/" class="font-semibold text-lg hover:text-amber-300">
+  {% set c = club.accent_color %}
+  <nav class="bg-{{ c }}-800 text-{{ c }}-50 px-6 py-3 flex items-center gap-6">
+    <a href="/{{ club.slug }}/" class="font-semibold text-lg hover:text-{{ c }}-200">
       {{ club.display_name }}
     </a>
-    <a href="/{{ club.slug }}/books" class="hover:text-amber-300 text-sm">Books</a>
-    <a href="/{{ club.slug }}/results" class="hover:text-amber-300 text-sm">Results</a>
-    <a href="/{{ club.slug }}/members" class="hover:text-amber-300 text-sm">Members</a>
+    <a href="/{{ club.slug }}/books" class="hover:text-{{ c }}-200 text-sm opacity-90">Books</a>
+    <a href="/{{ club.slug }}/results" class="hover:text-{{ c }}-200 text-sm opacity-90">Results</a>
+    <a href="/{{ club.slug }}/members" class="hover:text-{{ c }}-200 text-sm opacity-90">Members</a>
     {% if user is defined and user and user.is_admin %}
-    <a href="/{{ club.slug }}/admin" class="hover:text-amber-300 text-sm">Admin</a>
+    <a href="/{{ club.slug }}/admin" class="hover:text-{{ c }}-200 text-sm opacity-90">Admin</a>
     {% endif %}
     <span class="ml-auto text-sm text-stone-400">
       {% if user is defined and user %}

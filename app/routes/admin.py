@@ -17,28 +17,6 @@ from app.voting import finalize_month
 router = APIRouter(prefix="/{club_slug}/admin", tags=["admin"])
 
 
-# ── Club settings ────────────────────────────────────────────────────────────
-
-@router.get("/settings", response_class=HTMLResponse)
-async def settings_page(
-    request: Request,
-    club: BookClub = Depends(get_club),
-    admin: User = Depends(get_admin_user),
-):
-    allowed_emails = json.loads(club.allowed_emails)
-    allowed_domains = json.loads(club.allowed_domains)
-    return templates.TemplateResponse(
-        "admin/settings.html",
-        {
-            "request": request,
-            "club": club,
-            "admin": admin,
-            "allowed_emails_text": "\n".join(allowed_emails),
-            "allowed_domains_text": "\n".join(allowed_domains),
-        },
-    )
-
-
 @router.post("/settings")
 async def settings_save(
     request: Request,
@@ -47,6 +25,7 @@ async def settings_save(
     description: str = Form(""),
     allowed_emails_text: str = Form(""),
     allowed_domains_text: str = Form(""),
+    accent_color: str = Form("amber"),
     decay_rate: float = Form(...),
     meeting_week: int = Form(...),
     meeting_weekday: int = Form(...),
@@ -61,12 +40,13 @@ async def settings_save(
     club.description = description.strip() or None
     club.allowed_emails = json.dumps(emails)
     club.allowed_domains = json.dumps(domains)
+    club.accent_color = accent_color
     club.decay_rate = max(0.0, min(1.0, decay_rate))
     club.meeting_week = max(1, min(5, meeting_week))
     club.meeting_weekday = max(0, min(6, meeting_weekday))
     club.voting_close_days_before = max(0, voting_close_days_before)
     await db.commit()
-    return RedirectResponse(url=f"/{club_slug}/admin/settings", status_code=303)
+    return RedirectResponse(url=f"/{club_slug}/admin", status_code=303)
 
 
 @router.get("", response_class=HTMLResponse)
@@ -104,6 +84,9 @@ async def admin_dashboard(
     members_result = await db.execute(select(User).where(User.club_id == club.id).order_by(User.display_name))
     members = members_result.scalars().all()
 
+    allowed_emails = json.loads(club.allowed_emails)
+    allowed_domains = json.loads(club.allowed_domains)
+
     return templates.TemplateResponse(
         "admin/dashboard.html",
         {
@@ -117,6 +100,19 @@ async def admin_dashboard(
             "already_finalized": already_finalized,
             "is_skipped": settings is not None and settings.meeting_date is None,
             "members": members,
+            "allowed_emails_text": "\n".join(allowed_emails),
+            "allowed_domains_text": "\n".join(allowed_domains),
+            "accent_colors": [
+                ("amber", "Amber"),
+                ("orange", "Orange"),
+                ("rose", "Rose"),
+                ("violet", "Violet"),
+                ("indigo", "Indigo"),
+                ("sky", "Sky"),
+                ("teal", "Teal"),
+                ("emerald", "Emerald"),
+                ("stone", "Stone"),
+            ],
         },
     )
 

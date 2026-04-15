@@ -5,11 +5,15 @@ from app.config import SECRET_KEY
 from app.templates_env import templates
 from app.dependencies import get_club, get_current_user
 from app.models import BookClub, User
-from app.routes import auth, books, voting, results, admin, members
+from app.routes import auth, books, voting, results, admin, members, site
 
 app = FastAPI(title="Book Club")
 
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, max_age=60 * 60 * 24 * 30)
+
+# Site-level routes (/, /how-it-works, /new-club) must be registered first
+# so they aren't shadowed by the /{club_slug}/ route below.
+app.include_router(site.router)
 
 app.include_router(auth.router)
 app.include_router(books.router)
@@ -17,11 +21,6 @@ app.include_router(voting.router)
 app.include_router(results.router)
 app.include_router(admin.router)
 app.include_router(members.router)
-
-
-@app.get("/")
-async def root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.get("/{club_slug}/")
