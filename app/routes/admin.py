@@ -3,7 +3,7 @@ from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy import func, select
+from sqlalchemy import func, nullslast, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -206,7 +206,7 @@ async def manage_books(
 ):
     # Load all books with nominator and approval count
     books_result = await db.execute(
-        select(Book).where(Book.club_id == club.id).order_by(Book.status, Book.nominated_at.nullslast(), Book.title)
+        select(Book).where(Book.club_id == club.id).order_by(Book.status, nullslast(Book.nominated_at), Book.title)
     )
     books = books_result.scalars().all()
 
