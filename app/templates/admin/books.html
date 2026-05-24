@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% set user = admin %}
+{% set c = club.accent_color %}
+{% block title %}Manage books{% endblock %}
+{% block content %}
+<div class="flex items-center gap-4 mb-6">
+  <a href="/{{ club.slug }}/admin" class="text-stone-400 hover:text-stone-600 text-sm">← Admin</a>
+  <h1 class="text-2xl font-bold">Manage books</h1>
+</div>
+
+{% set statuses = [("active", "Nominated"), ("selected", "Selected"), ("historical", "Historical")] %}
+
+{% for status_val, status_label in statuses %}
+{% set section_books = book_data | selectattr("book.status.value", "equalto", status_val) | list %}
+{% if section_books %}
+<h2 class="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-2 mt-6">{{ status_label }}</h2>
+<div class="bg-white border border-stone-200 rounded-lg divide-y divide-stone-100">
+  {% for entry in section_books %}
+  {% set book = entry.book %}
+  <div class="px-4 py-3 flex items-start gap-4">
+    <div class="flex-1 min-w-0">
+      <div class="flex items-baseline gap-2 flex-wrap">
+        {% if book.goodreads_url %}
+        <a href="{{ book.goodreads_url }}" target="_blank" rel="noopener"
+          class="font-medium hover:text-{{ c }}-700">{{ book.title }}</a>
+        {% else %}
+        <span class="font-medium">{{ book.title }}</span>
+        {% endif %}
+        <span class="text-stone-500 text-sm">by {{ book.author }}</span>
+      </div>
+      <div class="text-xs text-stone-400 mt-0.5 space-x-3">
+        {% if book.page_count %}<span>{{ book.page_count }} pages</span>{% endif %}
+        {% if entry.nominated_by %}
+        <span>Nominated by {{ entry.nominated_by.display_name }}
+          {% if book.nominated_at %}on {{ book.nominated_at | dateformat }}{% endif %}
+        </span>
+        {% elif book.status.value == "historical" %}
+        <span>Historical
+          {% if book.selected_year %}
+            — {{ book.selected_year }}{% if book.selected_month %}/{{ "%02d" | format(book.selected_month) }}{% endif %}
+          {% endif %}
+        </span>
+        {% endif %}
+        <span>{{ entry.approval_count }} approval{{ "s" if entry.approval_count != 1 }}</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+      <a href="/{{ club.slug }}/admin/books/{{ book.id }}/edit"
+        class="text-xs text-stone-500 hover:text-stone-800 border border-stone-300 rounded px-2 py-1">
+        Edit
+      </a>
+      <form method="post" action="/{{ club.slug }}/admin/books/{{ book.id }}/delete"
+        onsubmit="return confirm('Delete \'{{ book.title }}\'? This also removes all approvals.')">
+        <button class="text-xs text-red-500 hover:text-red-700 border border-red-200 rounded px-2 py-1">
+          Delete
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endfor %}
+
+{% if not book_data %}
+<p class="text-stone-500">No books yet.</p>
+{% endif %}
+{% endblock %}

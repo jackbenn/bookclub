@@ -3,7 +3,7 @@ from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -193,6 +193,119 @@ async def set_meeting_date(
     row.notes = notes.strip() or None
     await db.commit()
     return RedirectResponse(url=f"/{club_slug}/admin", status_code=303)
+
+
+# ── Book management ──────────────────────────────────────────────────────────
+
+@router.get("/books", response_class=HTMLResponse)
+async def manage_books(
+    request: Request,
+    club: BookClub = Depends(get_club),
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    # Load all books with nominator and approval count
+    books_result = await db.execute(
+        select(Book).where(Book.club_id == club.id).order_by(Book.status, Book.nominated_at.nullslast(), Book.title)
+    )
+    books = books_result.scalars().all()
+
+    # Approval counts
+    counts_result = await db.execute(
+        select(Approval.book_id, func.count(Approval.user_id).label("n"))
+        .where(Approval.book_id.in_([b.id for b in books]))
+        .group_by(Approval.book_id)
+    )
+    approval_counts = {row.book_id: row.n for row in counts_result}
+
+    # Nominator names
+    nominator_ids = {b.nominated_by_id for b in books if b.nominated_by_id}
+    nominators = {}
+    if nominator_ids:
+        nom_result = await db.execute(select(User).where(User.id.in_(nominator_ids)))
+        nominators = {u.id: u for u in nom_result.scalars()}
+
+    book_data = [
+        {
+            "book": b,
+            "approval_count": approval_counts.get(b.id, 0),
+            "nominated_by": nominators.get(b.nominated_by_id),
+        }
+        for b in books
+    ]
+
+    return templates.TemplateResponse(
+        "admin/books.html",
+        {"request": request, "club": club, "admin": admin, "book_data": book_data},
+    )
+
+
+@router.post("/books/{book_id}/delete")
+async def delete_book(
+    club_slug: str,
+    book_id: int,
+    club: BookClub = Depends(get_club),
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Book).where(Book.id == book_id, Book.club_id == club.id))
+    book = result.scalar_one_or_none()
+    if book is None:
+        raise HTTPException(status_code=404, detail="Book not found")
+    # Delete approvals first
+    approvals = await db.execute(select(Approval).where(Approval.book_id == book_id))
+    for a in approvals.scalars():
+        await db.delete(a)
+    await db.delete(book)
+    await db.commit()
+    return RedirectResponse(url=f"/{club_slug}/admin/books", status_code=303)
+
+
+@router.get("/books/{book_id}/edit", response_class=HTMLResponse)
+async def edit_book_page(
+    request: Request,
+    book_id: int,
+    club: BookClub = Depends(get_club),
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Book).where(Book.id == book_id, Book.club_id == club.id))
+    book = result.scalar_one_or_none()
+    if book is None:
+        raise HTTPException(status_code=404, detail="Book not found")
+    return templates.TemplateResponse(
+        "admin/edit_book.html", {"request": request, "club": club, "admin": admin, "book": book}
+    )
+
+
+@router.post("/books/{book_id}/edit")
+async def edit_book_save(
+    club_slug: str,
+    book_id: int,
+    title: str = Form(...),
+    author: str = Form(...),
+    page_count: str = Form(""),
+    goodreads_url: str = Form(""),
+    selected_year: str = Form(""),
+    selected_month: str = Form(""),
+    club: BookClub = Depends(get_club),
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.scraper import canonicalize_goodreads_url
+    result = await db.execute(select(Book).where(Book.id == book_id, Book.club_id == club.id))
+    book = result.scalar_one_or_none()
+    if book is None:
+        raise HTTPException(status_code=404, detail="Book not found")
+    book.title = title.strip()
+    book.author = author.strip()
+    book.page_count = int(page_count) if page_count.strip().isdigit() else None
+    book.goodreads_url = canonicalize_goodreads_url(goodreads_url.strip()) or None
+    book.selected_year = int(selected_year) if selected_year.strip().isdigit() else None
+    raw_month = int(selected_month) if selected_month.strip().isdigit() else None
+    book.selected_month = raw_month if raw_month and 1 <= raw_month <= 12 else None
+    await db.commit()
+    return RedirectResponse(url=f"/{club_slug}/admin/books", status_code=303)
 
 
 # ── Historical book entry ────────────────────────────────────────────────────

@@ -105,12 +105,16 @@
   </table>
 </section>
 
-<!-- ── Historical books ───────────────────────────────────────────────────── -->
+<!-- ── Books ───────────────────────────────────────────────────────────── -->
 <section class="bg-white border border-stone-200 rounded-lg px-5 py-4 mb-5">
-  <h2 class="font-semibold mb-1">Historical books</h2>
-  <p class="text-sm text-stone-500 mb-3">Add books read before this system launched.</p>
-  <a href="/{{ club.slug }}/admin/add-historical"
-    class="text-sm text-{{ c }}-700 hover:text-{{ c }}-900 underline">Add historical book →</a>
+  <h2 class="font-semibold mb-1">Books</h2>
+  <p class="text-sm text-stone-500 mb-3">View, edit, or delete any book. Add pre-system historical books.</p>
+  <div class="flex gap-4">
+    <a href="/{{ club.slug }}/admin/books"
+      class="text-sm text-{{ c }}-700 hover:text-{{ c }}-900 underline">Manage all books →</a>
+    <a href="/{{ club.slug }}/admin/add-historical"
+      class="text-sm text-{{ c }}-700 hover:text-{{ c }}-900 underline">Add historical book →</a>
+  </div>
 </section>
 
 <!-- ── Club settings ──────────────────────────────────────────────────────── -->
