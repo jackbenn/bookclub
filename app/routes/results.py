@@ -12,6 +12,19 @@ from app.templates_env import templates
 router = APIRouter(prefix="/{club_slug}/results", tags=["results"])
 
 
+def _date_sort_key(year: int | None, month: int | None) -> int:
+    """Undated entries sort as the oldest (0)."""
+    return (year or 0) * 100 + (month or 0)
+
+
+def _date_display(year: int | None, month: int | None) -> str:
+    if year and month:
+        return f"{year}-{month:02d}"
+    if year:
+        return str(year)
+    return "—"
+
+
 @router.get("", response_class=HTMLResponse)
 async def results_page(
     request: Request,
@@ -28,9 +41,11 @@ async def results_page(
     )
     system_results = system_result.scalars().all()
 
-    # Enrich with runner-up book objects
-    enriched = []
+    rows = []
+    winning_book_ids = []
     for r in system_results:
+        w = r.winning_book
+        winning_book_ids.append(r.winning_book_id)
         runner_ups = []
         if r.runner_up_ids:
             ids = [int(i) for i in r.runner_up_ids.split(",") if i]
@@ -38,21 +53,38 @@ async def results_page(
                 ru_result = await db.execute(select(Book).where(Book.id.in_(ids)))
                 ru_books = {b.id: b for b in ru_result.scalars()}
                 runner_ups = [ru_books[i] for i in ids if i in ru_books]
-        enriched.append({"result": r, "runner_ups": runner_ups})
+        rows.append(
+            {
+                "date_sort": _date_sort_key(r.year, r.month),
+                "date_display": _date_display(r.year, r.month),
+                "title": w.title,
+                "author": w.author,
+                "goodreads_url": w.goodreads_url,
+                "runner_ups": runner_ups,
+            }
+        )
 
-    # Historical books (pre-system): selected + historical status
+    # Historical books (pre-system): selected + historical status, not already covered above
     hist_result = await db.execute(
         select(Book).where(
             Book.club_id == club.id,
             Book.status.in_([BookStatus.selected, BookStatus.historical]),
-            # Exclude books already covered by MonthlyResult
-            Book.id.not_in([r["result"].winning_book_id for r in enriched]),
-        ).order_by(
-            Book.selected_year.desc().nullslast(),
-            Book.selected_month.desc().nullslast(),
+            Book.id.not_in(winning_book_ids),
         )
     )
-    historical = hist_result.scalars().all()
+    for b in hist_result.scalars():
+        rows.append(
+            {
+                "date_sort": _date_sort_key(b.selected_year, b.selected_month),
+                "date_display": _date_display(b.selected_year, b.selected_month),
+                "title": b.title,
+                "author": b.author,
+                "goodreads_url": b.goodreads_url,
+                "runner_ups": [],
+            }
+        )
+
+    rows.sort(key=lambda row: -row["date_sort"])
 
     return templates.TemplateResponse(
         "results/list.html",
@@ -60,7 +92,6 @@ async def results_page(
             "request": request,
             "club": club,
             "user": user,
-            "system_results": enriched,
-            "historical": historical,
+            "rows": rows,
         },
     )

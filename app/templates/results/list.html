@@ -1,70 +1,96 @@
 {% extends "base.html" %}
+{% set c = club.accent_color %}
 {% block title %}Results{% endblock %}
 {% block content %}
 <h1 class="text-2xl font-bold mb-6">Past selections</h1>
 
-{% if system_results %}
-<ul class="space-y-4 mb-10">
-  {% for entry in system_results %}
-  {% set r = entry.result %}
-  {% set w = r.winning_book %}
-  <li class="bg-white border border-stone-200 rounded-lg px-4 py-3">
-    <div class="text-xs text-stone-400 mb-1 uppercase tracking-wide">
-      {{ r.year }} · {{ r.month | month_name }}
-    </div>
-    <div class="flex items-baseline gap-2">
-      {% if w.goodreads_url %}
-      <a href="{{ w.goodreads_url }}" target="_blank" rel="noopener"
-        class="font-semibold text-lg hover:text-amber-700">{{ w.title }}</a>
-      {% else %}
-      <span class="font-semibold text-lg">{{ w.title }}</span>
-      {% endif %}
-      <span class="text-stone-500 text-sm">by {{ w.author }}</span>
-    </div>
-    {% if entry.runner_ups %}
-    <div class="text-xs text-stone-400 mt-1">
-      Also considered:
-      {% for ru in entry.runner_ups %}
-        {% if ru.goodreads_url %}
-          <a href="{{ ru.goodreads_url }}" target="_blank" rel="noopener"
-            class="hover:text-amber-600 underline">{{ ru.title }}</a>
-        {% else %}
-          {{ ru.title }}
-        {% endif %}
-        {% if not loop.last %}, {% endif %}
+{% if rows %}
+<div class="bg-white border border-stone-200 rounded-lg overflow-x-auto">
+  <table id="results-table" class="w-full text-sm">
+    <thead>
+      <tr class="text-left text-stone-400 border-b border-stone-200">
+        <th data-sort="date" class="pb-2 pt-3 px-4 font-medium cursor-pointer select-none hover:text-stone-700">
+          Date <span class="sort-indicator"></span>
+        </th>
+        <th data-sort="title" class="pb-2 pt-3 px-2 font-medium cursor-pointer select-none hover:text-stone-700">
+          Title <span class="sort-indicator"></span>
+        </th>
+        <th data-sort="author" class="pb-2 pt-3 px-2 font-medium cursor-pointer select-none hover:text-stone-700">
+          Author <span class="sort-indicator"></span>
+        </th>
+        <th class="pb-2 pt-3 px-4 font-medium">Also considered</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-stone-100">
+      {% for row in rows %}
+      <tr data-date="{{ row.date_sort }}" data-title="{{ row.title | lower }}" data-author="{{ row.author | lower }}">
+        <td class="py-2 px-4 text-stone-400 text-xs whitespace-nowrap">{{ row.date_display }}</td>
+        <td class="py-2 px-2 font-medium">
+          {% if row.goodreads_url %}
+          <a href="{{ row.goodreads_url }}" target="_blank" rel="noopener"
+            class="hover:text-{{ c }}-700">{{ row.title }}</a>
+          {% else %}
+          {{ row.title }}
+          {% endif %}
+        </td>
+        <td class="py-2 px-2 text-stone-600">{{ row.author }}</td>
+        <td class="py-2 px-4 text-xs text-stone-400">
+          {% if row.runner_ups %}
+          {% for ru in row.runner_ups %}
+            {% if ru.goodreads_url %}
+              <a href="{{ ru.goodreads_url }}" target="_blank" rel="noopener"
+                class="hover:text-{{ c }}-600 underline">{{ ru.title }}</a>
+            {% else %}
+              {{ ru.title }}
+            {% endif %}
+            {% if not loop.last %}, {% endif %}
+          {% endfor %}
+          {% endif %}
+        </td>
+      </tr>
       {% endfor %}
-    </div>
-    {% endif %}
-  </li>
-  {% endfor %}
-</ul>
-{% endif %}
+    </tbody>
+  </table>
+</div>
 
-{% if historical %}
-<h2 class="text-lg font-semibold text-stone-500 mb-3">Earlier reads</h2>
-<ul class="space-y-2">
-  {% for book in historical %}
-  <li class="flex items-baseline gap-2 text-stone-600 text-sm">
-    {% if book.selected_year %}
-    <span class="text-stone-400 text-xs w-16 shrink-0">
-      {{ book.selected_year }}{% if book.selected_month %}/{{ "%02d" | format(book.selected_month) }}{% endif %}
-    </span>
-    {% else %}
-    <span class="text-stone-400 text-xs w-16 shrink-0">—</span>
-    {% endif %}
-    {% if book.goodreads_url %}
-    <a href="{{ book.goodreads_url }}" target="_blank" rel="noopener"
-      class="hover:text-amber-700 font-medium">{{ book.title }}</a>
-    {% else %}
-    <span class="font-medium">{{ book.title }}</span>
-    {% endif %}
-    <span class="text-stone-400">by {{ book.author }}</span>
-  </li>
-  {% endfor %}
-</ul>
-{% endif %}
+<script>
+(function () {
+  const table = document.getElementById("results-table");
+  if (!table) return;
+  const tbody = table.tBodies[0];
+  const headers = Array.from(table.querySelectorAll("th[data-sort]"));
+  let sort = { key: "date", dir: "desc" };
 
-{% if not system_results and not historical %}
+  function render() {
+    const rows = Array.from(tbody.rows);
+    rows.sort((a, b) => {
+      let cmp;
+      if (sort.key === "date") {
+        cmp = Number(a.dataset.date) - Number(b.dataset.date);
+      } else {
+        cmp = a.dataset[sort.key].localeCompare(b.dataset[sort.key]);
+      }
+      return sort.dir === "asc" ? cmp : -cmp;
+    });
+    rows.forEach((r) => tbody.appendChild(r));
+    headers.forEach((h) => {
+      h.querySelector(".sort-indicator").textContent =
+        h.dataset.sort === sort.key ? (sort.dir === "asc" ? "▲" : "▼") : "";
+    });
+  }
+
+  headers.forEach((h) => {
+    h.addEventListener("click", () => {
+      const key = h.dataset.sort;
+      sort = { key, dir: sort.key === key && sort.dir === "asc" ? "desc" : "asc" };
+      render();
+    });
+  });
+
+  render();
+})();
+</script>
+{% else %}
 <p class="text-stone-500">No results yet.</p>
 {% endif %}
 {% endblock %}
