@@ -15,7 +15,8 @@
         <th data-sort="title" class="pb-2 pt-3 px-2 font-medium cursor-pointer select-none hover:text-stone-700">
           Title <span class="sort-indicator"></span>
         </th>
-        <th data-sort="author" class="pb-2 pt-3 px-2 font-medium cursor-pointer select-none hover:text-stone-700">
+        <th data-sort="author" title="Sorted by surname"
+          class="pb-2 pt-3 px-2 font-medium cursor-pointer select-none hover:text-stone-700">
           Author <span class="sort-indicator"></span>
         </th>
         <th class="pb-2 pt-3 px-4 font-medium">Also considered</th>
@@ -23,7 +24,7 @@
     </thead>
     <tbody class="divide-y divide-stone-100">
       {% for row in rows %}
-      <tr data-date="{{ row.date_sort }}" data-title="{{ row.title | lower }}" data-author="{{ row.author | lower }}">
+      <tr data-date="{{ row.date_sort }}" data-title="{{ row.title | lower }}" data-author="{{ row.author_sort }}">
         <td class="py-2 px-4 text-stone-400 text-xs whitespace-nowrap">{{ row.date_display }}</td>
         <td class="py-2 px-2 font-medium">
           {% if row.goodreads_url %}

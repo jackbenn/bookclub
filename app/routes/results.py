@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
+from nameparser import HumanName
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,6 +24,21 @@ def _date_display(year: int | None, month: int | None) -> str:
     if year:
         return str(year)
     return "—"
+
+
+def _author_sort_key(author: str) -> str:
+    """Surname-first sort key, e.g. 'Ursula K. Le Guin' -> 'le guin ursula k.'.
+
+    Handles common suffixes (Jr., III) and name-piece prefixes (Le, Van, De)
+    via nameparser. Not perfect — e.g. it assumes Western first/last order,
+    so an author given surname-first (as is conventional for some Chinese
+    names) will sort on the wrong piece — but good enough for a book list,
+    and falls back to the raw string if it can't identify a last name.
+    """
+    name = HumanName(author)
+    if not name.last:
+        return author.strip().lower()
+    return f"{name.last} {name.first} {name.middle}".strip().lower()
 
 
 @router.get("", response_class=HTMLResponse)
@@ -59,6 +75,7 @@ async def results_page(
                 "date_display": _date_display(r.year, r.month),
                 "title": w.title,
                 "author": w.author,
+                "author_sort": _author_sort_key(w.author),
                 "goodreads_url": w.goodreads_url,
                 "runner_ups": runner_ups,
             }
@@ -79,6 +96,7 @@ async def results_page(
                 "date_display": _date_display(b.selected_year, b.selected_month),
                 "title": b.title,
                 "author": b.author,
+                "author_sort": _author_sort_key(b.author),
                 "goodreads_url": b.goodreads_url,
                 "runner_ups": [],
             }

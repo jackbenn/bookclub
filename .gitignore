@@ -211,3 +211,6 @@ __marimo__/
 !*.env.example
 /data/
 *.db
+
+# personal scratch notes
+PLAN_*.md
