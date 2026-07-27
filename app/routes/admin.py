@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dates import compute_meeting_date, compute_voting_close
 from app.dependencies import get_admin_user, get_club
-from app.models import Book, BookClub, BookStatus, MonthlyResult, MonthlySettings, User
+from app.models import Approval, Book, BookClub, BookStatus, MonthlyResult, MonthlySettings, User
 from app.scraper import scrape_goodreads
 from app.templates_env import templates
 from app.voting import finalize_month
