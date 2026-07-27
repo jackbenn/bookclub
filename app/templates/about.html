@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% set c = club.accent_color %}
+{% block title %}About{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">About {{ club.display_name }}</h1>
+
+<div class="space-y-8 text-stone-700 leading-relaxed">
+
+  <section>
+    <h2 class="text-lg font-semibold text-stone-900 mb-2">What this is</h2>
+    {% if club.description %}
+    <div class="prose prose-stone max-w-none">{{ club.description | markdown }}</div>
+    {% else %}
+    <p>
+      {{ club.display_name }} is a book club that picks what to read next together each month.
+      Anyone in the club can nominate a book; everyone marks the ones they'd be happy reading;
+      the site runs an election to pick the winner.
+    </p>
+    {% endif %}
+    <p class="mt-2">
+      This site handles the whole cycle: nominating books, marking your approvals, and running
+      the monthly election. It also keeps a record of everything the club has read.
+    </p>
+  </section>
+
+  <section>
+    <h2 class="text-lg font-semibold text-stone-900 mb-2">The goal of the election system</h2>
+    <p>
+      A simple "most votes wins" system rewards whichever taste is most common in the group and
+      leaves everyone else picking books they didn't ask for, month after month. The goal here is
+      different: over time, <em>everyone's</em> taste should get a fair, roughly proportional share
+      of picks — not just the majority's. If a few members share a taste that's a minority in the
+      group, they should still see their kind of book win about as often as their share of the
+      club would predict.
+    </p>
+    <p class="mt-2">
+      Concretely, that means: nominate freely, mark every book you'd genuinely enjoy (there's no
+      benefit to being stingy), and trust that the system remembers whose picks have won recently
+      and gives everyone else a turn.
+    </p>
+  </section>
+
+  <section>
+    <h2 class="text-lg font-semibold text-stone-900 mb-2">How the vote actually works</h2>
+    <p>
+      Each member has an <strong>influence weight</strong>, starting at 1.0 when they join. Every
+      active book's score for the month is the sum of the weights of the members who marked it as
+      a book they'd read. The book with the highest score wins.
+    </p>
+    <p class="mt-2">
+      This is a form of <a href="https://en.wikipedia.org/wiki/Phragm%C3%A9n%27s_voting_rules"
+        class="underline hover:text-{{ c }}-700" target="_blank">Phragmén's sequential method</a>,
+      a proportional voting rule. What makes it proportional is what happens after each win:
+    </p>
+    <ul class="list-disc pl-6 mt-2 space-y-1">
+      <li>
+        Every member who approved the winning book gets a bit more <strong>load</strong> — their
+        weight for future months drops, in proportion to how much influence they just spent.
+      </li>
+      <li>
+        Members who were active that month (i.e. visited the site) then get their load reduced by
+        a decay factor, so weight for people who keep participating gradually recovers even after
+        a win.
+      </li>
+      <li>
+        Members who weren't active that month are left alone — their load neither grows nor
+        shrinks, so people who've drifted away don't quietly build up outsized influence for a
+        future month they come back to vote in.
+      </li>
+    </ul>
+    <p class="mt-2">
+      Repeated over many months, this is what produces the fairness guarantee: a consistent
+      minority ends up winning roughly as often as its size in the club would predict, without
+      anyone needing to coordinate or strategize.
+    </p>
+  </section>
+
+  <section>
+    <h2 class="text-lg font-semibold text-stone-900 mb-2">Secrecy and timing</h2>
+    <p>
+      Your approvals are private while voting is open — nobody, including other members, can see
+      who marked what. That's deliberate: it stops people from waiting to see what's popular and
+      piling onto the front-runner, or avoiding a book because of who else likes it. Approvals can
+      be changed at any time before the month is finalized.
+    </p>
+    <p class="mt-2">
+      An admin finalizes each month once voting closes. At that point the winner and the two
+      runners-up are revealed on the <a href="/{{ club.slug }}/results" class="underline hover:text-{{ c }}-700">results page</a> —
+      individual approvals stay private even after finalization, and weighted scores are never
+      shown to non-admins.
+    </p>
+  </section>
+
+  <section>
+    <h2 class="text-lg font-semibold text-stone-900 mb-2">Tiebreakers</h2>
+    <p>
+      Exact ties are rare, but when weighted scores match, the tie is broken in order by:
+      raw (unweighted) approval count, then page count (the shorter book wins), then nomination
+      date (the older nomination wins, as a small reward for patience).
+    </p>
+  </section>
+
+</div>
+{% endblock %}

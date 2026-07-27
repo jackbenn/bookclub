@@ -12,7 +12,7 @@ from app.dependencies import get_admin_user, get_club
 from app.models import Approval, Book, BookClub, BookStatus, MonthlyResult, MonthlySettings, User
 from app.scraper import scrape_goodreads
 from app.templates_env import templates
-from app.voting import finalize_month
+from app.voting import finalize_month, preview_current_standings
 
 router = APIRouter(prefix="/{club_slug}/admin", tags=["admin"])
 
@@ -113,6 +113,26 @@ async def admin_dashboard(
                 ("emerald", "Emerald"),
                 ("stone", "Stone"),
             ],
+        },
+    )
+
+
+@router.get("/preview", response_class=HTMLResponse)
+async def preview_standings(
+    request: Request,
+    club: BookClub = Depends(get_club),
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    standings = await preview_current_standings(club, db)
+    return templates.TemplateResponse(
+        "admin/preview.html",
+        {
+            "request": request,
+            "club": club,
+            "admin": admin,
+            "books": standings["books"],
+            "members": standings["members"],
         },
     )
 

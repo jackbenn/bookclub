@@ -5,7 +5,7 @@ from app.config import SECRET_KEY
 from app.templates_env import templates
 from app.dependencies import get_club, get_current_user
 from app.models import BookClub, User
-from app.routes import auth, books, voting, results, admin, members, site
+from app.routes import auth, books, voting, results, admin, members, about, site
 
 app = FastAPI(title="Book Club")
 
@@ -21,6 +21,7 @@ app.include_router(voting.router)
 app.include_router(results.router)
 app.include_router(admin.router)
 app.include_router(members.router)
+app.include_router(about.router)
 
 
 @app.get("/{club_slug}/")

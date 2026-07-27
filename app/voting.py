@@ -82,6 +82,76 @@ def _tiebreak_key(book: Book, score: float, raw_count: int):
     return (-score, -raw_count, pages, ts)
 
 
+async def preview_current_standings(club: BookClub, db: AsyncSession) -> dict:
+    """
+    Compute what finalize_month() would do right now, without persisting
+    anything or mutating loads. Admin-only: reveals individual approvals,
+    which are otherwise secret until finalization.
+
+    Returns:
+        {
+          "books": [
+              {"rank", "book", "weighted_score", "raw_count",
+               "approvers": [display_name, ...]},
+              ...
+          ],  # active books, best standing first
+          "members": [
+              {"user", "load", "weight"}, ...
+          ],  # current influence weight for every member
+        }
+    """
+    loads = await _get_loads(club.id, db)
+    book_approvers = await _get_approvals(club.id, db)
+
+    books_result = await db.execute(
+        select(Book).where(Book.club_id == club.id, Book.status == BookStatus.active)
+    )
+    books_by_id: dict[int, Book] = {b.id: b for b in books_result.scalars()}
+
+    scores = _score_books(book_approvers, loads)
+    for bid in books_by_id:
+        scores.setdefault(bid, (0.0, 0))
+
+    ranked = sorted(
+        books_by_id.keys(),
+        key=lambda bid: _tiebreak_key(books_by_id[bid], *scores[bid]),
+    )
+
+    all_approver_ids = {uid for approvers in book_approvers.values() for uid in approvers}
+    users_result = await db.execute(select(User).where(User.id.in_(all_approver_ids)))
+    users_by_id = {u.id: u for u in users_result.scalars()}
+
+    book_rows = []
+    for rank, bid in enumerate(ranked, start=1):
+        weighted, raw = scores[bid]
+        approver_names = sorted(
+            users_by_id[uid].display_name
+            for uid in book_approvers.get(bid, [])
+            if uid in users_by_id
+        )
+        book_rows.append(
+            {
+                "rank": rank,
+                "book": books_by_id[bid],
+                "weighted_score": weighted,
+                "raw_count": raw,
+                "approvers": approver_names,
+            }
+        )
+
+    members_result = await db.execute(
+        select(User).where(User.club_id == club.id).order_by(User.display_name)
+    )
+    member_rows = []
+    for m in members_result.scalars():
+        load = loads.get(m.id, 0.0)
+        weight = 1.0 / (1.0 + load)
+        member_rows.append({"user": m, "load": load, "weight": weight})
+    member_rows.sort(key=lambda r: -r["weight"])
+
+    return {"books": book_rows, "members": member_rows}
+
+
 async def finalize_month(
     club: BookClub,
     year: int,
