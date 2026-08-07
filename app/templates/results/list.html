@@ -34,7 +34,14 @@
           {{ row.title }}
           {% endif %}
         </td>
-        <td class="py-2 px-2 text-stone-600">{{ row.author }}</td>
+        <td class="py-2 px-2 text-stone-600">
+          {% if row.author_goodreads_url %}
+          <a href="{{ row.author_goodreads_url }}" target="_blank" rel="noopener"
+            class="hover:text-{{ c }}-700">{{ row.author }}</a>
+          {% else %}
+          {{ row.author }}
+          {% endif %}
+        </td>
         <td class="py-2 px-4 text-xs text-stone-400">
           {% if row.runner_ups %}
           {% for ru in row.runner_ups %}

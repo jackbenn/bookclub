@@ -34,6 +34,13 @@
       class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-{{ c }}-400">
   </div>
 
+  <div>
+    <label class="block text-sm font-medium mb-1">Author's Goodreads URL</label>
+    <input name="author_goodreads_url" type="url" value="{{ book.author_goodreads_url or '' }}"
+      class="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-{{ c }}-400">
+    <p class="text-xs text-stone-500 mt-1">Auto-filled when scraped from Goodreads; edit or add by hand otherwise.</p>
+  </div>
+
   {% if book.status.value in ("selected", "historical") %}
   <div class="flex gap-3">
     <div>

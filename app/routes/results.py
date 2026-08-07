@@ -76,6 +76,7 @@ async def results_page(
                 "title": w.title,
                 "author": w.author,
                 "author_sort": _author_sort_key(w.author),
+                "author_goodreads_url": w.author_goodreads_url,
                 "goodreads_url": w.goodreads_url,
                 "runner_ups": runner_ups,
             }
@@ -97,6 +98,7 @@ async def results_page(
                 "title": b.title,
                 "author": b.author,
                 "author_sort": _author_sort_key(b.author),
+                "author_goodreads_url": b.author_goodreads_url,
                 "goodreads_url": b.goodreads_url,
                 "runner_ups": [],
             }

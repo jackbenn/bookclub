@@ -29,7 +29,14 @@
         {% else %}
         <span class="font-semibold">{{ book.title }}</span>
         {% endif %}
-        <span class="text-stone-500 text-sm truncate">by {{ book.author }}</span>
+        <span class="text-stone-500 text-sm truncate">by
+          {% if book.author_goodreads_url %}
+          <a href="{{ book.author_goodreads_url }}" target="_blank" rel="noopener"
+            class="hover:text-amber-700 underline">{{ book.author }}</a>
+          {% else %}
+          {{ book.author }}
+          {% endif %}
+        </span>
       </div>
       {% if book.page_count %}
       <span class="text-xs text-stone-400">{{ book.page_count }} pages</span>

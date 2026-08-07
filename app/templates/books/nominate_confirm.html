@@ -19,6 +19,7 @@
 
 <form method="post" action="/{{ club.slug }}/books/nominate/confirm" class="space-y-4 max-w-lg">
   <input type="hidden" name="goodreads_url" value="{{ goodreads_url }}">
+  <input type="hidden" name="author_goodreads_url" value="{{ book.author_url or '' }}">
 
   <div>
     <label class="block text-sm font-medium mb-1" for="title">Title</label>

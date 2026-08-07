@@ -306,13 +306,14 @@ async def edit_book_save(
     author: str = Form(...),
     page_count: str = Form(""),
     goodreads_url: str = Form(""),
+    author_goodreads_url: str = Form(""),
     selected_year: str = Form(""),
     selected_month: str = Form(""),
     club: BookClub = Depends(get_club),
     admin: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    from app.scraper import canonicalize_goodreads_url
+    from app.scraper import canonicalize_author_url, canonicalize_goodreads_url
     result = await db.execute(select(Book).where(Book.id == book_id, Book.club_id == club.id))
     book = result.scalar_one_or_none()
     if book is None:
@@ -321,6 +322,7 @@ async def edit_book_save(
     book.author = author.strip()
     book.page_count = int(page_count) if page_count.strip().isdigit() else None
     book.goodreads_url = canonicalize_goodreads_url(goodreads_url.strip()) or None
+    book.author_goodreads_url = canonicalize_author_url(author_goodreads_url.strip()) or None
     book.selected_year = int(selected_year) if selected_year.strip().isdigit() else None
     raw_month = int(selected_month) if selected_month.strip().isdigit() else None
     book.selected_month = raw_month if raw_month and 1 <= raw_month <= 12 else None
@@ -363,12 +365,15 @@ async def add_historical_confirm(
     author: str = Form(...),
     page_count: str = Form(""),
     goodreads_url: str = Form(""),
+    author_goodreads_url: str = Form(""),
     selected_year: str = Form(""),
     selected_month: str = Form(""),
     club: BookClub = Depends(get_club),
     admin: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    from app.scraper import canonicalize_author_url
+
     pages = int(page_count) if page_count.strip().isdigit() else None
     year = int(selected_year) if selected_year.strip().isdigit() else None
     month = int(selected_month) if selected_month.strip().isdigit() else None
@@ -381,6 +386,7 @@ async def add_historical_confirm(
         author=author.strip(),
         page_count=pages,
         goodreads_url=goodreads_url.strip() or None,
+        author_goodreads_url=canonicalize_author_url(author_goodreads_url.strip()) if author_goodreads_url.strip() else None,
         nominated_by_id=None,
         nominated_at=None,
         status=BookStatus.historical,

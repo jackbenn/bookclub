@@ -14,6 +14,17 @@ def canonicalize_goodreads_url(url: str) -> str | None:
         return f"https://www.goodreads.com/book/show/{m.group(1)}"
     return url
 
+
+def canonicalize_author_url(url: str) -> str | None:
+    """Strip slug after the numeric ID: /author/show/123456.Name -> /author/show/123456"""
+    if not url:
+        return None
+    url = url.strip()
+    m = re.search(r"goodreads\.com/author/show/(\d+)", url)
+    if m:
+        return f"https://www.goodreads.com/author/show/{m.group(1)}"
+    return url
+
 import httpx
 from bs4 import BeautifulSoup
 
@@ -22,6 +33,7 @@ from bs4 import BeautifulSoup
 class BookData:
     title: str | None = None
     author: str | None = None
+    author_url: str | None = None
     page_count: int | None = None
     error: str | None = None
 
@@ -51,6 +63,11 @@ async def scrape_goodreads(url: str) -> BookData:
     author_tag = soup.find("span", {"data-testid": "name"}) or soup.find("a", class_="authorName")
     if author_tag:
         data.author = author_tag.get_text(strip=True)
+        # The name is usually wrapped in (or, in the legacy layout, itself is)
+        # a link to the author's Goodreads page.
+        author_link = author_tag if author_tag.name == "a" else author_tag.find_parent("a")
+        if author_link and author_link.get("href"):
+            data.author_url = canonicalize_author_url(author_link["href"])
 
     # Page count — look for "X pages" pattern
     pages_tag = soup.find("p", {"data-testid": "pagesFormat"})

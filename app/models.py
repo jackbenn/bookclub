@@ -77,6 +77,7 @@ class Book(Base):
     author: Mapped[str] = mapped_column(String(256), nullable=False)
     page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     goodreads_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    author_goodreads_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     # Null for historical imports
     nominated_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     nominated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

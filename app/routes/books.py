@@ -9,7 +9,7 @@ from app.database import get_db
 from app.dates import compute_meeting_date, compute_voting_close
 from app.dependencies import get_club, get_current_user
 from app.models import Approval, Book, BookClub, BookStatus, MonthlyResult, MonthlySettings, User
-from app.scraper import canonicalize_goodreads_url, scrape_goodreads
+from app.scraper import canonicalize_author_url, canonicalize_goodreads_url, scrape_goodreads
 from sqlalchemy import func
 from app.templates_env import templates
 
@@ -161,6 +161,7 @@ async def nominate_confirm(
     author: str = Form(...),
     page_count: str = Form(""),
     goodreads_url: str = Form(""),
+    author_goodreads_url: str = Form(""),
     club: BookClub = Depends(get_club),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -175,7 +176,10 @@ async def nominate_confirm(
                 "club": club,
                 "user": user,
                 "goodreads_url": canonical or goodreads_url,
-                "book": type("B", (), {"title": title, "author": author, "page_count": page_count, "error": None})(),
+                "book": type("B", (), {
+                    "title": title, "author": author, "page_count": page_count,
+                    "author_url": author_goodreads_url, "error": None,
+                })(),
                 "error": _duplicate_message(duplicate),
             },
             status_code=400,
@@ -188,6 +192,7 @@ async def nominate_confirm(
         author=author.strip(),
         page_count=pages,
         goodreads_url=canonical or None,
+        author_goodreads_url=canonicalize_author_url(author_goodreads_url) if author_goodreads_url else None,
         nominated_by_id=user.id,
         nominated_at=datetime.now(timezone.utc),
         status=BookStatus.active,
