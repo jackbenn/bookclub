@@ -7,9 +7,9 @@ from sqlalchemy import func, nullslast, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.dates import compute_meeting_date, compute_voting_close
+from app.dates import find_next_actionable_month
 from app.dependencies import get_admin_user, get_club
-from app.models import Approval, Book, BookClub, BookStatus, MonthlyResult, MonthlySettings, User
+from app.models import Approval, Book, BookClub, BookStatus, MonthlySettings, User
 from app.scraper import scrape_goodreads
 from app.templates_env import templates
 from app.voting import finalize_month, preview_current_standings
@@ -57,29 +57,8 @@ async def admin_dashboard(
     db: AsyncSession = Depends(get_db),
 ):
     today = date.today()
-    year, month = today.year, today.month
-
-    # Current month settings/override
-    settings_result = await db.execute(
-        select(MonthlySettings).where(
-            MonthlySettings.club_id == club.id,
-            MonthlySettings.year == year,
-            MonthlySettings.month == month,
-        )
-    )
-    settings = settings_result.scalar_one_or_none()
-    meeting_date = compute_meeting_date(club, year, month, settings)
-    voting_close = compute_voting_close(club, meeting_date, settings)
-
-    # Already finalized this month?
-    result_row = await db.execute(
-        select(MonthlyResult).where(
-            MonthlyResult.club_id == club.id,
-            MonthlyResult.year == year,
-            MonthlyResult.month == month,
-        )
-    )
-    already_finalized = result_row.scalar_one_or_none() is not None
+    year, month, meeting_date, voting_close = await find_next_actionable_month(club, db)
+    is_current_month = (year, month) == (today.year, today.month)
 
     members_result = await db.execute(select(User).where(User.club_id == club.id).order_by(User.display_name))
     members = members_result.scalars().all()
@@ -97,8 +76,7 @@ async def admin_dashboard(
             "month": month,
             "meeting_date": meeting_date,
             "voting_close": voting_close,
-            "already_finalized": already_finalized,
-            "is_skipped": settings is not None and settings.meeting_date is None,
+            "is_current_month": is_current_month,
             "members": members,
             "allowed_emails_text": "\n".join(allowed_emails),
             "allowed_domains_text": "\n".join(allowed_domains),

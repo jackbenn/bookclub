@@ -9,7 +9,12 @@
 
 {% if book.error %}
 <p class="text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 text-sm mb-4">
-  {{ book.error }} — please fill in the details below manually.
+  {{ book.error }}
+  {% if book.blocked %}
+  You can still fill in the details manually below, or wait a bit and try the URL again.
+  {% else %}
+  Please fill in the details below manually.
+  {% endif %}
 </p>
 {% else %}
 <p class="text-stone-500 text-sm mb-4">

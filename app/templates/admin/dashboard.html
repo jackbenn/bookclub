@@ -8,18 +8,16 @@
 <!-- ── This month ─────────────────────────────────────────────────────────── -->
 <section class="bg-white border border-stone-200 rounded-lg px-5 py-4 mb-5">
   <div class="flex items-center justify-between mb-3">
-    <h2 class="font-semibold">This month: {{ year }} · {{ month | month_name }}</h2>
+    <h2 class="font-semibold">
+      {{ "This month" if is_current_month else "Next up" }}: {{ year }} · {{ month | month_name }}
+    </h2>
     <a href="/{{ club.slug }}/admin/preview"
       class="text-xs text-{{ c }}-700 hover:text-{{ c }}-900 underline">Preview current standings →</a>
   </div>
 
-  {% if is_skipped %}
-  <p class="text-amber-700 text-sm bg-amber-50 border border-amber-200 rounded px-3 py-2">
-    This month is marked as skipped.
-  </p>
-  {% elif already_finalized %}
-  <p class="text-green-700 text-sm bg-green-50 border border-green-200 rounded px-3 py-2">
-    This month has been finalized. <a href="/{{ club.slug }}/results" class="underline">View results →</a>
+  {% if not meeting_date %}
+  <p class="text-stone-500 text-sm bg-stone-50 border border-stone-200 rounded px-3 py-2">
+    No upcoming month needs finalizing or skipping right now.
   </p>
   {% else %}
   <div class="text-sm text-stone-600 mb-4 space-y-1">

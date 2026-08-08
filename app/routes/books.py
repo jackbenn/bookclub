@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -6,48 +6,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.dates import compute_meeting_date, compute_voting_close
+from app.dates import find_next_actionable_month
 from app.dependencies import get_club, get_current_user
-from app.models import Approval, Book, BookClub, BookStatus, MonthlyResult, MonthlySettings, User
+from app.models import Approval, Book, BookClub, BookStatus, User
 from app.scraper import canonicalize_author_url, canonicalize_goodreads_url, scrape_goodreads
 from sqlalchemy import func
 from app.templates_env import templates
 
 router = APIRouter(prefix="/{club_slug}/books", tags=["books"])
-
-
-async def _next_unfinalized_month(club: BookClub, db: AsyncSession):
-    """Return (meeting_date, voting_close_date) for the next unfinalized month."""
-    today = date.today()
-    # Check current month then next; stop when we find one that isn't finalized/skipped
-    year, month = today.year, today.month
-    for _ in range(3):  # look up to 3 months ahead
-        result_row = await db.execute(
-            select(MonthlyResult).where(
-                MonthlyResult.club_id == club.id,
-                MonthlyResult.year == year,
-                MonthlyResult.month == month,
-            )
-        )
-        if result_row.scalar_one_or_none() is None:
-            settings_row = await db.execute(
-                select(MonthlySettings).where(
-                    MonthlySettings.club_id == club.id,
-                    MonthlySettings.year == year,
-                    MonthlySettings.month == month,
-                )
-            )
-            settings = settings_row.scalar_one_or_none()
-            meeting = compute_meeting_date(club, year, month, settings)
-            if meeting is not None:  # not skipped
-                voting_close = compute_voting_close(club, meeting, settings)
-                return meeting, voting_close
-        # Advance one month
-        month += 1
-        if month > 12:
-            month = 1
-            year += 1
-    return None, None
 
 
 @router.get("", response_class=HTMLResponse)
@@ -68,7 +34,7 @@ async def book_list(
     )
     approved_ids = {row for row in approval_result.scalars()}
 
-    meeting_date, voting_close = await _next_unfinalized_month(club, db)
+    _year, _month, meeting_date, voting_close = await find_next_actionable_month(club, db)
 
     return templates.TemplateResponse(
         "books/list.html",
@@ -178,7 +144,7 @@ async def nominate_confirm(
                 "goodreads_url": canonical or goodreads_url,
                 "book": type("B", (), {
                     "title": title, "author": author, "page_count": page_count,
-                    "author_url": author_goodreads_url, "error": None,
+                    "author_url": author_goodreads_url, "error": None, "blocked": False,
                 })(),
                 "error": _duplicate_message(duplicate),
             },
