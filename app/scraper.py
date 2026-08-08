@@ -36,6 +36,7 @@ class BookData:
     author_url: str | None = None
     page_count: int | None = None
     error: str | None = None
+    blocked: bool = False  # True if Goodreads' bot protection challenged the request
 
 
 async def scrape_goodreads(url: str) -> BookData:
@@ -50,6 +51,13 @@ async def scrape_goodreads(url: str) -> BookData:
             r.raise_for_status()
     except Exception as e:
         return BookData(error=f"Could not fetch page: {e}")
+
+    # AWS WAF Bot Control challenges suspicious traffic with a 202 and an
+    # empty body instead of serving the page. A plain HTTP client can't
+    # solve the challenge, so this is a distinct condition from a parsing
+    # failure — retrying immediately won't help.
+    if r.headers.get("x-amzn-waf-action") == "challenge" or (r.status_code == 202 and not r.text):
+        return BookData(blocked=True, error="Blocked by Goodreads' bot protection — wait before retrying.")
 
     soup = BeautifulSoup(r.text, "html.parser")
     data = BookData()
