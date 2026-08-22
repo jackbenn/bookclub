@@ -2,9 +2,12 @@
 
 import hashlib
 import json
+import logging
 import random
 import string
 from datetime import datetime, timedelta, timezone
+
+log = logging.getLogger(__name__)
 
 import resend
 from itsdangerous import URLSafeTimedSerializer
@@ -68,22 +71,31 @@ async def consume_magic_token(token: str, db: AsyncSession) -> User | None:
     """Verify a signed token, mark it used, return the User or None."""
     user_id = verify_signed_token(token)
     if user_id is None:
+        log.warning("magic-link failed: bad signature or itsdangerous expiry")
         return None
+
     token_hash = _hash_token(token)
+    # Fetch the row regardless of used/expired so we can log the exact reason.
     result = await db.execute(
-        select(MagicToken).where(
-            MagicToken.token_hash == token_hash,
-            MagicToken.used_at.is_(None),
-            MagicToken.expires_at > datetime.now(timezone.utc),
-        )
+        select(MagicToken).where(MagicToken.token_hash == token_hash)
     )
     row = result.scalar_one_or_none()
     if row is None:
+        log.warning("magic-link failed: token hash not found in DB (user_id=%s)", user_id)
         return None
+    if row.used_at is not None:
+        log.warning("magic-link failed: already used at %s (user_id=%s)", row.used_at, user_id)
+        return None
+    if row.expires_at <= datetime.now(timezone.utc):
+        log.warning("magic-link failed: expired at %s (user_id=%s)", row.expires_at, user_id)
+        return None
+
     row.used_at = datetime.now(timezone.utc)
     await db.commit()
     result = await db.execute(select(User).where(User.id == user_id))
-    return result.scalar_one_or_none()
+    user = result.scalar_one_or_none()
+    log.info("magic-link success: user_id=%s email=%s", user_id, user.email if user else "?")
+    return user
 
 
 async def consume_otp(email: str, club_id: int, otp: str, db: AsyncSession) -> User | None:
@@ -93,20 +105,30 @@ async def consume_otp(email: str, club_id: int, otp: str, db: AsyncSession) -> U
     )
     user = result.scalar_one_or_none()
     if user is None:
+        log.warning("otp failed: no user for email=%s club_id=%s", email, club_id)
         return None
+
+    # Fetch by OTP ignoring used/expired to distinguish failure reasons.
     result = await db.execute(
         select(MagicToken).where(
             MagicToken.user_id == user.id,
             MagicToken.otp_code == otp,
-            MagicToken.used_at.is_(None),
-            MagicToken.expires_at > datetime.now(timezone.utc),
         )
     )
     row = result.scalar_one_or_none()
     if row is None:
+        log.warning("otp failed: wrong code for email=%s", email)
         return None
+    if row.used_at is not None:
+        log.warning("otp failed: already used at %s (email=%s)", row.used_at, email)
+        return None
+    if row.expires_at <= datetime.now(timezone.utc):
+        log.warning("otp failed: expired at %s (email=%s)", row.expires_at, email)
+        return None
+
     row.used_at = datetime.now(timezone.utc)
     await db.commit()
+    log.info("otp success: email=%s", email)
     return user
 
 

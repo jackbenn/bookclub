@@ -69,16 +69,31 @@ async def verify_prompt(request: Request, email: str, club: BookClub = Depends(g
 @router.get("/verify")
 async def verify_link(
     request: Request,
-    club_slug: str,
     token: str,
+    club: BookClub = Depends(get_club),
+):
+    # Render a confirmation page rather than consuming the token immediately.
+    # This prevents email security scanners (which pre-fetch URLs) from
+    # burning the token before the user ever clicks it.
+    return templates.TemplateResponse(
+        "auth/confirm.html", {"request": request, "club": club, "token": token}
+    )
+
+
+@router.post("/verify-confirm")
+async def verify_confirm(
+    request: Request,
+    club_slug: str,
+    token: str = Form(...),
     club: BookClub = Depends(get_club),
     db: AsyncSession = Depends(get_db),
 ):
     user = await consume_magic_token(token, db)
     if user is None or user.club_id != club.id:
         return templates.TemplateResponse(
-            "auth/verify.html",
-            {"request": request, "club": club, "email": "", "error": "Link is invalid or expired."},
+            "auth/confirm.html",
+            {"request": request, "club": club, "token": token,
+             "error": "Link is invalid or expired. Try requesting a new one."},
         )
     set_session(request, user.id)
     return RedirectResponse(url=f"/{club_slug}/books", status_code=303)

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Log in{% endblock %}
+{% block content %}
+<div class="max-w-sm mx-auto mt-12">
+  <h1 class="text-2xl font-bold mb-2">Ready to log in?</h1>
+  <p class="text-stone-600 text-sm mb-6">Click the button below to complete your login to {{ club.display_name }}.</p>
+
+  {% if error %}
+  <p class="mb-4 text-red-600 text-sm">{{ error }}</p>
+  {% endif %}
+
+  <form method="post" action="/{{ club.slug }}/auth/verify-confirm">
+    <input type="hidden" name="token" value="{{ token }}">
+    <button type="submit"
+      class="w-full bg-{{ club.accent_color }}-500 hover:bg-{{ club.accent_color }}-600 text-white font-semibold rounded px-4 py-2 text-sm">
+      Log in
+    </button>
+  </form>
+
+  <p class="text-xs text-stone-500 mt-6">
+    <a href="/{{ club.slug }}/auth/login" class="underline hover:text-{{ club.accent_color }}-600">Request a new link</a>
+  </p>
+</div>
+{% endblock %}

@@ -1,5 +1,12 @@
+import logging
+
 from fastapi import FastAPI, Request, Depends
 from starlette.middleware.sessions import SessionMiddleware
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 
 from app.config import SECRET_KEY
 from app.templates_env import templates
