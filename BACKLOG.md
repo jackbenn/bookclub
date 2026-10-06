@@ -1,6 +1,6 @@
 # Backlog — bookclub
 
-Prefix: BOOK · Next ID: 10 · Schema: v1
+Prefix: BOOK · Next ID: 11 · Schema: v1
 
 Ideas and next steps, one item per `##` section. Not commitments — a running
 backlog so things surface again instead of getting lost in old conversations.
@@ -286,3 +286,61 @@ links into a menu. The club name may also need to shrink or truncate.
 ### Acceptance criteria
 - [ ] No horizontal page scroll at 375px for a member or an admin
 - [ ] Desktop layout unchanged
+
+## [BOOK-10] Record each book's year of publication
+
+- **Status:** idea
+- **Priority:** unknown
+- **Size:** session
+- **Depends on:** none
+- **Tags:** books, data, ui
+- **Related:** BOOK-4, BOOK-6
+
+Store and show the year each book was published, and fill it in for the
+books already in the database by scraping Goodreads.
+
+What it touches:
+- **Model and migration:** a nullable `publication_year` on `Book`
+  (`app/models.py`), with an alembic migration after
+  `0004_author_goodreads_url.py`.
+- **Scraper:** `scrape_goodreads()` in `app/scraper.py` returns `BookData`
+  with title, author, author link and page count, and nothing about
+  publication. Add the year. The book page has a "First published …" line
+  near the page count. Find the selector from a saved copy of a page, not by
+  probing live (see CLAUDE.md).
+- **Forms:** the year field needs adding wherever page count already is.
+  That's nominate confirm (`books/nominate_confirm.html` and
+  `nominate_confirm` in `app/routes/books.py`), the admin's edit book
+  form (`admin/edit_book.html`) and add historical book
+  (`admin/add_historical_confirm.html`).
+- **Display:** a Year column in the Books table (BOOK-4) and the Results
+  table, and optionally the admin book lists that show page count
+  (`admin/books.html`, `admin/preview.html`).
+- **Backfill:** a one-off script modeled on
+  `scripts/backfill_author_links.py`. It covers books that have a
+  `goodreads_url` but no year, dry-run by default with `--confirm` to write,
+  with a 4–9s jittered delay between requests. It stops at once if
+  `scrape_goodreads()` returns `blocked=True`. Books with no
+  `goodreads_url` can't be backfilled, so they need the year entered by
+  hand in the edit form.
+
+Decisions (2026-10-06):
+- **First publication year, where Goodreads gives it.** Goodreads URLs point
+  at a specific edition, but a 2003 reprint of *Middlemarch* should still say
+  1871. The scraper takes the "First published" year when the page has one.
+  If a page shows only the edition's date, fall back to that year (the
+  confirm page lets the nominator correct it).
+- **Its own sortable column on both Books and Results**, sorting like the
+  other columns, with books that have no year last in both directions (as
+  Length does). The Books table only just fits a 375px screen now, so the
+  extra column needs checking at phone width.
+- **Year only.** The backfill doesn't touch page counts: Jack believes every
+  nominated book already has one.
+
+### Acceptance criteria
+- [ ] New nominations get the first-publication year from Goodreads (or the edition's year if that's all the page gives), and the nominator can edit it on the confirm page
+- [ ] Admins can set or correct the year on any book
+- [ ] Books and Results each have a Year column that sorts ascending/descending on header click, with books with no year last in both directions
+- [ ] At 375px both tables fit their box without scrolling sideways (the nav bar's own overflow is BOOK-9)
+- [ ] The backfill script fills the year for existing books with a Goodreads URL, spaces its requests, and stops on a WAF challenge
+- [ ] The year parsing is tested against a saved Goodreads page, never a live request
