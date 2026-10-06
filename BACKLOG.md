@@ -1,6 +1,6 @@
 # Backlog — bookclub
 
-Prefix: BOOK · Next ID: 7 · Schema: v1
+Prefix: BOOK · Next ID: 9 · Schema: v1
 
 Ideas and next steps, one item per `##` section. Not commitments — a running
 backlog so things surface again instead of getting lost in old conversations.
@@ -189,3 +189,57 @@ Candidate areas, roughly by risk:
 
 Worth deciding along the way: a shared fixture (`tests/conftest.py`) for the
 DB setup now duplicated inside `test_voting.py`, and whether to run tests in CI.
+
+## [BOOK-7] Protect club creation
+
+- **Status:** idea
+- **Priority:** unknown
+- **Size:** unknown
+- **Depends on:** none
+- **Tags:** security, admin
+
+Anyone can create a club. `POST /new-club` (`app/routes/site.py`) needs no
+login, has no rate limit or CAPTCHA, and doesn't verify the admin email before
+the club exists. Every new club then appears on the public home page at
+bookclub.bennetto.com. On 2026-10-06 production listed a club "frkzuumlsr"
+with description "sfwqikguzpixmoujitzlvhjuwiiwpn" — probably a club member
+who works in QA testing the form, but a bot could do the same at volume.
+
+Options to weigh (not mutually exclusive):
+- Require the admin email to be confirmed (magic link) before the club is
+  created or before it is listed
+- Stop listing clubs on the home page, or list only ones that opt in
+- Require a site-level invite code or approval to create a club
+- Rate-limit `POST /new-club` per IP
+- An admin way to delete junk clubs, which today means editing the DB by hand
+
+## [BOOK-8] Split the About page into a club part and a general how-it-works part
+
+- **Status:** idea
+- **Priority:** unknown
+- **Size:** session
+- **Depends on:** none
+- **Tags:** ui, docs
+
+Split the about page into a club-specific part and a general part explaining
+how it works.
+
+Today the club About page (`app/templates/about.html`, served at
+`/{club_slug}/about` by `app/routes/about.py`) mixes both. Its "What this is"
+section uses `club.description`. Then "The goal of the election system",
+"How the vote actually works", "Secrecy and timing" and "Tiebreakers" are
+general explanation that's the same for every club.
+
+There is already a site-wide `/how-it-works` page
+(`app/templates/site/how_it_works.html`) covering much the same ground in
+different words: the problem with simple voting, the balance of debt,
+inactive members, tiebreakers, after the pick. The two have drifted apart:
+BOOK-3 had to update the 60-day wording in both. Part of this item is
+deciding whether the general part *is* that page (with the club About
+linking to it), or a shared include rendered in both places, so the
+explanation lives once.
+
+Club-specific content worth putting in the club part: the description,
+meeting schedule (`meeting_week`/`meeting_weekday`), voting-close timing,
+and links to that club's results page.
+
