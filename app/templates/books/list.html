@@ -9,13 +9,41 @@
   </a>
 </div>
 
-<p class="text-sm text-stone-500 mb-6">
-  {% if voting_close and meeting_date %}
-  The book for the {{ meeting_date | dateformat }} meeting will be chosen on {{ voting_close | dateformat }} at 11:59 PM Pacific time. Mark the books you'd be happy to read.
-  {% else %}
-  Mark the books you'd be happy to read.
+<dl class="text-sm mb-4 space-y-1">
+  {% if next_meeting %}
+  <div>
+    <dt class="inline font-medium text-stone-700">Next meeting:</dt>
+    <dd class="inline text-stone-600">{{ next_meeting | dateformat("%A, %B %-d, %Y") }} —
+      {% if next_meeting_book %}
+        {% if next_meeting_book.goodreads_url %}
+        <a href="{{ next_meeting_book.goodreads_url }}" target="_blank" rel="noopener"
+          class="font-semibold text-stone-800 underline hover:text-amber-700">{{ next_meeting_book.title }}</a>
+        {% else %}
+        <span class="font-semibold text-stone-800">{{ next_meeting_book.title }}</span>
+        {% endif %}
+        by {{ next_meeting_book.author }}
+      {% else %}
+        book not chosen yet
+      {% endif %}
+    </dd>
+  </div>
   {% endif %}
-</p>
+  {% if pick_date %}
+  <div>
+    <dt class="inline font-medium text-stone-700">Next book chosen:</dt>
+    <dd class="inline text-stone-600">
+      {% if pick_date < today -%}
+      to be announced soon (voting closed {{ pick_date | dateformat("%B %-d") }})
+      {%- else -%}
+      {{ pick_date | dateformat("%B %-d, %Y") }}
+      {%- endif %}
+      {%- if pick_meeting != next_meeting %}, for the {{ pick_meeting | dateformat("%B %-d") }} meeting{% endif %}
+    </dd>
+  </div>
+  {% endif %}
+</dl>
+
+<p class="text-sm text-stone-500 mb-6">Mark the books you'd be happy to read.</p>
 
 {% if books %}
 <div class="bg-white border border-stone-200 rounded-lg overflow-x-auto">

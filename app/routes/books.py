@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.dates import find_next_actionable_month
+from app.dates import find_next_actionable_month, find_next_meeting
 from app.dependencies import get_club, get_current_user
 from app.models import Approval, Book, BookClub, BookStatus, User
 from app.scraper import canonicalize_author_url, canonicalize_goodreads_url, scrape_goodreads
@@ -34,7 +34,8 @@ async def book_list(
     )
     approved_ids = {row for row in approval_result.scalars()}
 
-    _year, _month, meeting_date, voting_close = await find_next_actionable_month(club, db)
+    next_meeting, next_meeting_book = await find_next_meeting(club, db)
+    _year, _month, pick_meeting, pick_date = await find_next_actionable_month(club, db)
 
     return templates.TemplateResponse(
         "books/list.html",
@@ -44,8 +45,11 @@ async def book_list(
             "user": user,
             "books": books,
             "approved_ids": approved_ids,
-            "meeting_date": meeting_date,
-            "voting_close": voting_close,
+            "next_meeting": next_meeting,
+            "next_meeting_book": next_meeting_book,
+            "pick_meeting": pick_meeting,
+            "pick_date": pick_date,
+            "today": date.today(),
         },
     )
 

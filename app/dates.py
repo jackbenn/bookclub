@@ -6,7 +6,7 @@ from datetime import date, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import BookClub, MonthlyResult, MonthlySettings
+from app.models import Book, BookClub, BookStatus, MonthlyResult, MonthlySettings
 
 
 def nth_weekday_of_month(year: int, month: int, weekday: int, n: int) -> date | None:
@@ -91,3 +91,46 @@ async def find_next_actionable_month(
             month = 1
             year += 1
     return year, month, None, None
+
+
+async def find_next_meeting(
+    club: BookClub,
+    db: AsyncSession,
+) -> tuple[date | None, Book | None]:
+    """
+    Return (meeting_date, book) for the club's next meeting on or after today.
+    book is the pick for that month, or None if it hasn't been chosen yet.
+
+    A month skipped in the app but with a book recorded for it (picked outside
+    the app, then added as a historical book) still counts as a meeting, on
+    the club's usual schedule.
+    """
+    today = date.today()
+    year, month = today.year, today.month
+    for _ in range(12):  # look up to a year ahead
+        book_row = await db.execute(
+            select(Book).where(
+                Book.club_id == club.id,
+                Book.status.in_([BookStatus.selected, BookStatus.historical]),
+                Book.selected_year == year,
+                Book.selected_month == month,
+            ).limit(1)
+        )
+        book = book_row.scalar_one_or_none()
+        settings_row = await db.execute(
+            select(MonthlySettings).where(
+                MonthlySettings.club_id == club.id,
+                MonthlySettings.year == year,
+                MonthlySettings.month == month,
+            )
+        )
+        meeting = compute_meeting_date(club, year, month, settings_row.scalar_one_or_none())
+        if meeting is None and book is not None:
+            meeting = nth_weekday_of_month(year, month, club.meeting_weekday, club.meeting_week)
+        if meeting is not None and meeting >= today:
+            return meeting, book
+        month += 1
+        if month > 12:
+            month = 1
+            year += 1
+    return None, None
