@@ -12,7 +12,8 @@ When a book wins:
     voter's current weight — heavier-loaded voters absorb less.)
 
 Decay (applied after load updates, for active members only):
-    l_i *= decay_rate   if user was active this month (last_active in current month)
+    l_i *= decay_rate   if user was active recently (last_active within
+                        ACTIVITY_WINDOW_DAYS of the finalize date)
     l_i unchanged       if user was inactive
 
 Tiebreakers (ascending priority, applied in order):
@@ -24,7 +25,7 @@ Tiebreakers (ascending priority, applied in order):
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 
 from sqlalchemy import select
@@ -35,6 +36,11 @@ from app.models import Approval, Book, BookClub, BookStatus, MonthlyResult, User
 
 if TYPE_CHECKING:
     pass
+
+# A member counts as active (and gets load decay) if they visited the site
+# within this many days before the month is finalized (counted from the
+# finalize date, not the month being finalized).
+ACTIVITY_WINDOW_DAYS = 60
 
 
 async def _get_loads(club_id: int, db: AsyncSession) -> dict[int, float]:
@@ -162,7 +168,7 @@ async def finalize_month(
     Run the Phragmén selection for the given month:
       - Pick the winner and top-2 runners-up
       - Update loads for approvers of the winner
-      - Apply decay for members active this month
+      - Apply decay for members active in the last ACTIVITY_WINDOW_DAYS days
       - Mark the winning book as selected
       - Persist and return a MonthlyResult
     """
@@ -197,12 +203,12 @@ async def finalize_month(
         w_i = 1.0 / (1.0 + loads.get(uid, 0.0))
         loads[uid] = loads.get(uid, 0.0) + w_i
 
-    # Decay loads for active members (active = last_active in this month)
+    # Decay loads for active members (active = visited within the window)
+    active_since = date.today() - timedelta(days=ACTIVITY_WINDOW_DAYS)
     active_result = await db.execute(
         select(User).where(
             User.club_id == club.id,
-            User.last_active >= date(year, month, 1),
-            User.last_active < date(year + (month // 12), (month % 12) + 1, 1),
+            User.last_active >= active_since,
         )
     )
     active_user_ids = {u.id for u in active_result.scalars()}

@@ -1,6 +1,6 @@
 # Backlog — bookclub
 
-Prefix: BOOK · Next ID: 6 · Schema: v1
+Prefix: BOOK · Next ID: 7 · Schema: v1
 
 Ideas and next steps, one item per `##` section. Not commitments — a running
 backlog so things surface again instead of getting lost in old conversations.
@@ -69,7 +69,7 @@ exactly once.
 
 ## [BOOK-3] Widen the activity window for load decay to the last 60 days
 
-- **Status:** idea
+- **Status:** done
 - **Priority:** P3
 - **Size:** quick
 - **Depends on:** none
@@ -93,10 +93,17 @@ participate each month…") in `app/templates/site/how_it_works.html`, and
 recovery too — check them for wording that would become wrong.
 
 ### Acceptance criteria
-- [ ] A member whose `last_active` is within 60 days of the finalize date gets decay applied
-- [ ] A member last active more than 60 days before it does not
-- [ ] Docstring at the top of `app/voting.py` and the member-facing help text describe the new window
-- [ ] Tests cover both edges
+- [x] A member whose `last_active` is within 60 days of the finalize date gets decay applied
+- [x] A member last active more than 60 days before it does not
+- [x] Docstring at the top of `app/voting.py` and the member-facing help text describe the new window
+- [x] Tests cover both edges
+
+### Notes
+- 2026-10-05: implemented. The repo has no test suite, so both edges (60 days
+  active, 61 inactive) were checked with a throwaway script against an
+  in-memory SQLite DB under Python 3.11. The tests criterion stays open.
+- 2026-10-05: added `tests/test_voting.py` (the project's first pytest test),
+  covering 0, 35, 60 and 61 days and never-active. Closed.
 
 ## [BOOK-4] Turn the Books tab into a sortable table
 
@@ -149,3 +156,35 @@ Open questions to refine before this can be specified:
 - Flat comments or threaded replies? Editing and deleting?
 - Any notification (email) when someone comments, or just visible on the page?
 - Does an admin need to be able to remove comments?
+
+## [BOOK-6] Expand the test suite
+
+- **Status:** idea
+- **Priority:** P3
+- **Size:** multi
+- **Depends on:** none
+- **Tags:** test
+
+The project had no tests until BOOK-3 added `tests/test_voting.py`, which
+covers only the decay activity window. The harness is minimal: `pytest.ini`
+(sets `pythonpath = .`), `requirements-dev.txt` (adds pytest), and tests that
+build an in-memory `sqlite+aiosqlite://` database and drive async code with
+`asyncio.run` rather than a pytest-asyncio plugin. Run with
+`pip install -r requirements-dev.txt && pytest`, on Python 3.11 like the
+Dockerfile.
+
+Candidate areas, roughly by risk:
+- `app/voting.py` beyond decay: Phragmén scoring and load updates, each
+  tiebreaker in order, runners-up, error when nothing has approvals,
+  `preview_current_standings` agreeing with `finalize_month`
+- `app/auth_utils.py`: magic link and OTP — valid, expired, already used
+  (security-sensitive; see commit a4aaae0)
+- `app/dates.py`: meeting date and voting-close date, including month and
+  year boundaries
+- Route-level tests via FastAPI's test client: approval toggle, nomination,
+  admin-only routes rejecting non-admins
+- `app/scraper.py` parsing against saved HTML fixtures, **never** live
+  Goodreads (see CLAUDE.md), including the WAF-challenge `blocked=True` path
+
+Worth deciding along the way: a shared fixture (`tests/conftest.py`) for the
+DB setup now duplicated inside `test_voting.py`, and whether to run tests in CI.
