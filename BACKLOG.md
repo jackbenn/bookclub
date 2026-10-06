@@ -108,7 +108,7 @@ recovery too — check them for wording that would become wrong.
 
 ## [BOOK-4] Turn the Books tab into a sortable table
 
-- **Status:** idea
+- **Status:** done
 - **Priority:** P3
 - **Size:** session
 - **Depends on:** none
@@ -134,10 +134,27 @@ Things to decide while building:
 - Check it is usable at phone width.
 
 ### Acceptance criteria
-- [ ] Books tab renders as a table with Title, Author, Length, Approval columns
-- [ ] Each column sorts ascending/descending on header click, with an indicator, matching Results
-- [ ] Author sorts by surname
-- [ ] Approving or withdrawing from the table still works and the row sorts correctly afterward
+- [x] Books tab renders as a table with Title, Author, Length, Approval columns
+- [x] Each column sorts ascending/descending on header click, with an indicator, matching Results
+- [x] Author sorts by surname
+- [x] Approving or withdrawing from the table still works and the row sorts correctly afterward
+
+### Notes
+- 2026-10-06: implemented. The Approval column is headed "Want to
+  read?" (Jack's wording; it is still the member's own approve/withdraw
+  button). First click on it sorts approved-first. Books with no page count
+  sort last in both directions. No sort is applied on load, so rows start in
+  nomination order as before. The sort reads approval from the button's
+  `data-approved` attribute at sort time, so it is current after an HTMX swap;
+  the table doesn't re-sort itself on click, so the row doesn't jump away.
+  `_author_sort_key` moved from `app/routes/results.py` to `app/names.py`
+  and is also a Jinja filter, `author_sort`.
+- 2026-10-06: checked in headless Chromium on a seeded scratch DB. Every
+  column sorts both ways with the indicator, approve and withdraw toggle from
+  the table, and a re-sort afterward uses the new state. No console errors.
+  At 375px the approval column was clipped, so below Tailwind's `sm`
+  breakpoint the button shows only ✓/+ (with a tooltip) and its header wraps.
+  The table now fits a phone screen. Closed.
 
 ## [BOOK-5] Let members leave notes on or discuss books
 

@@ -4,8 +4,8 @@
   hx-target="closest [data-approval]"
   hx-swap="outerHTML"
   class="text-xs px-3 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 font-medium"
-  data-approval>
-  ✓ I'd read this
+  data-approval data-approved="1" title="Withdraw">
+  ✓<span class="hidden sm:inline"> I'd read this</span>
 </button>
 {% else %}
 <button
@@ -13,7 +13,7 @@
   hx-target="closest [data-approval]"
   hx-swap="outerHTML"
   class="text-xs px-3 py-1 rounded-full bg-stone-100 text-stone-600 border border-stone-300 hover:bg-stone-200 font-medium"
-  data-approval>
-  + I'd read this
+  data-approval data-approved="0" title="I'd read this">
+  +<span class="hidden sm:inline"> I'd read this</span>
 </button>
 {% endif %}

@@ -18,37 +18,106 @@
 </p>
 
 {% if books %}
-<ul class="space-y-3">
-  {% for book in books %}
-  <li class="bg-white border border-stone-200 rounded-lg px-4 py-3 flex items-start gap-4">
-    <div class="flex-1 min-w-0">
-      <div class="flex items-baseline gap-2">
-        {% if book.goodreads_url %}
-        <a href="{{ book.goodreads_url }}" target="_blank" rel="noopener"
-          class="font-semibold hover:text-amber-700 truncate">{{ book.title }}</a>
-        {% else %}
-        <span class="font-semibold">{{ book.title }}</span>
-        {% endif %}
-        <span class="text-stone-500 text-sm truncate">by
+<div class="bg-white border border-stone-200 rounded-lg overflow-x-auto">
+  <table id="books-table" class="w-full text-sm">
+    <thead>
+      <tr class="text-left text-stone-400 border-b border-stone-200">
+        <th data-sort="title" class="pb-2 pt-3 px-4 font-medium cursor-pointer select-none hover:text-stone-700">
+          Title <span class="sort-indicator"></span>
+        </th>
+        <th data-sort="author" title="Sorted by surname"
+          class="pb-2 pt-3 px-2 font-medium cursor-pointer select-none hover:text-stone-700">
+          Author <span class="sort-indicator"></span>
+        </th>
+        <th data-sort="length" class="pb-2 pt-3 px-2 font-medium cursor-pointer select-none hover:text-stone-700 whitespace-nowrap">
+          Length <span class="sort-indicator"></span>
+        </th>
+        <th data-sort="approved" data-first-dir="desc"
+          class="pb-2 pt-3 px-4 font-medium cursor-pointer select-none hover:text-stone-700">
+          Want to read? <span class="sort-indicator"></span>
+        </th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-stone-100">
+      {% for book in books %}
+      <tr data-title="{{ book.title | lower }}" data-author="{{ book.author | author_sort }}"
+        data-length="{{ book.page_count or '' }}">
+        <td class="py-2 px-4 font-medium">
+          {% if book.goodreads_url %}
+          <a href="{{ book.goodreads_url }}" target="_blank" rel="noopener"
+            class="hover:text-amber-700">{{ book.title }}</a>
+          {% else %}
+          {{ book.title }}
+          {% endif %}
+        </td>
+        <td class="py-2 px-2 text-stone-600">
           {% if book.author_goodreads_url %}
           <a href="{{ book.author_goodreads_url }}" target="_blank" rel="noopener"
-            class="hover:text-amber-700 underline">{{ book.author }}</a>
+            class="hover:text-amber-700">{{ book.author }}</a>
           {% else %}
           {{ book.author }}
           {% endif %}
-        </span>
-      </div>
-      {% if book.page_count %}
-      <span class="text-xs text-stone-400">{{ book.page_count }} pages</span>
-      {% endif %}
-    </div>
-    <div data-approval>
-      {% set approved = book.id in approved_ids %}
-      {% include "books/_approval_button.html" %}
-    </div>
-  </li>
-  {% endfor %}
-</ul>
+        </td>
+        <td class="py-2 px-2 text-stone-400 text-xs whitespace-nowrap">
+          {% if book.page_count %}{{ book.page_count }} pp{% endif %}
+        </td>
+        <td class="py-2 px-4 whitespace-nowrap">
+          {% set approved = book.id in approved_ids %}
+          {% include "books/_approval_button.html" %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+(function () {
+  const table = document.getElementById("books-table");
+  if (!table) return;
+  const tbody = table.tBodies[0];
+  const headers = Array.from(table.querySelectorAll("th[data-sort]"));
+  // No initial sort: rows start in nomination order.
+  let sort = { key: null, dir: "asc" };
+
+  // Read approval from the button itself, so it stays current after an HTMX swap.
+  function approved(row) {
+    return Number(row.querySelector("[data-approved]").dataset.approved);
+  }
+
+  function render() {
+    const rows = Array.from(tbody.rows);
+    const sign = sort.dir === "asc" ? 1 : -1;
+    rows.sort((a, b) => {
+      if (sort.key === "length") {
+        const la = a.dataset.length, lb = b.dataset.length;
+        // Books with no page count sort last in either direction.
+        if (!la || !lb) return (la ? 0 : 1) - (lb ? 0 : 1);
+        return sign * (Number(la) - Number(lb));
+      }
+      if (sort.key === "approved") {
+        return sign * (approved(a) - approved(b));
+      }
+      return sign * a.dataset[sort.key].localeCompare(b.dataset[sort.key]);
+    });
+    rows.forEach((r) => tbody.appendChild(r));
+    headers.forEach((h) => {
+      h.querySelector(".sort-indicator").textContent =
+        h.dataset.sort === sort.key ? (sort.dir === "asc" ? "▲" : "▼") : "";
+    });
+  }
+
+  headers.forEach((h) => {
+    h.addEventListener("click", () => {
+      const key = h.dataset.sort;
+      const first = h.dataset.firstDir || "asc";
+      const flipped = first === "asc" ? "desc" : "asc";
+      sort = { key, dir: sort.key === key && sort.dir === first ? flipped : first };
+      render();
+    });
+  });
+})();
+</script>
 {% else %}
 <p class="text-stone-500">No books nominated yet. Be the first!</p>
 {% endif %}
