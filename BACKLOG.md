@@ -74,6 +74,7 @@ exactly once.
 - **Size:** quick
 - **Depends on:** none
 - **Tags:** voting
+- **Commits:** 468b938
 
 Lengthen how long a member can go without logging in and still have their
 voting weight recover. Today it is one month; it should be two (60 days).
