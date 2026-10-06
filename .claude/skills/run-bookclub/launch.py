@@ -88,7 +88,7 @@ async def seed():
                 db.add(Approval(user_id=alice.id, book_id=book.id))
         winner = Book(club_id=club.id, title="Kindred", author="Octavia E. Butler", page_count=264,
                       status=BookStatus.selected, selected_year=2026, selected_month=8)
-        old = Book(club_id=club.id, title="Gilead", author="Marilynne Robinson",
+        old = Book(club_id=club.id, title="A Psalm for the Wild-Built", author="Becky Chambers",
                    status=BookStatus.historical, selected_year=2025, selected_month=11)
         db.add_all([winner, old])
         await db.flush()

@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies import get_club, get_current_user
 from app.models import Book, BookClub, BookStatus, MonthlyResult, User
-from app.names import author_sort_key
+from app.sort_keys import author_sort_key, title_sort_key
 from app.templates_env import templates
 
 router = APIRouter(prefix="/{club_slug}/results", tags=["results"])
@@ -59,6 +59,7 @@ async def results_page(
                 "date_sort": _date_sort_key(r.year, r.month),
                 "date_display": _date_display(r.year, r.month),
                 "title": w.title,
+                "title_sort": title_sort_key(w.title),
                 "author": w.author,
                 "author_sort": author_sort_key(w.author),
                 "author_goodreads_url": w.author_goodreads_url,
@@ -81,6 +82,7 @@ async def results_page(
                 "date_sort": _date_sort_key(b.selected_year, b.selected_month),
                 "date_display": _date_display(b.selected_year, b.selected_month),
                 "title": b.title,
+                "title_sort": title_sort_key(b.title),
                 "author": b.author,
                 "author_sort": author_sort_key(b.author),
                 "author_goodreads_url": b.author_goodreads_url,

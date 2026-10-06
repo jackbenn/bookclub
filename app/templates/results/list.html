@@ -24,7 +24,7 @@
     </thead>
     <tbody class="divide-y divide-stone-100">
       {% for row in rows %}
-      <tr data-date="{{ row.date_sort }}" data-title="{{ row.title | lower }}" data-author="{{ row.author_sort }}">
+      <tr data-date="{{ row.date_sort }}" data-title="{{ row.title_sort }}" data-author="{{ row.author_sort }}">
         <td class="py-2 px-4 text-stone-400 text-xs whitespace-nowrap">{{ row.date_display }}</td>
         <td class="py-2 px-2 font-medium">
           {% if row.goodreads_url %}

@@ -38,7 +38,7 @@ Every start recreates the DB (`$TMPDIR/bookclub-run.db`) with this seed:
 | Club | slug `test`, so pages are at `/test/books`, `/test/results`, `/test/admin`, … |
 | Users | `1` Alice (admin), `2` Bob |
 | Books | six active nominations, two with no page count; Alice approves *Beloved* and *A Wizard of Earthsea* |
-| Results | one finalized month (Aug 2026, *Kindred*) and one historical pick (*Gilead*) |
+| Results | one finalized month (Aug 2026, *Kindred*) and one historical pick (*A Psalm for the Wild-Built*) |
 
 Logging in: `GET /__login/{user_id}?next=/test/books` sets the session and
 redirects. The driver does this for you.
