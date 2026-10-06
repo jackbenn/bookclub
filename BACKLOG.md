@@ -113,6 +113,7 @@ recovery too — check them for wording that would become wrong.
 - **Size:** session
 - **Depends on:** none
 - **Tags:** ui, books
+- **Commits:** 9a0798a
 
 Turn the Books tab into a sortable table, similar to the Results tab. The
 columns should be Title, Author, Length, and Approval.
