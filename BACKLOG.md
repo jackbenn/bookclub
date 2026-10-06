@@ -1,6 +1,6 @@
 # Backlog — bookclub
 
-Prefix: BOOK · Next ID: 9 · Schema: v1
+Prefix: BOOK · Next ID: 10 · Schema: v1
 
 Ideas and next steps, one item per `##` section. Not commitments — a running
 backlog so things surface again instead of getting lost in old conversations.
@@ -261,3 +261,28 @@ Club-specific content worth putting in the club part: the description,
 meeting schedule (`meeting_week`/`meeting_weekday`), voting-close timing,
 and links to that club's results page.
 
+
+## [BOOK-9] Fix the nav bar overflowing at phone width
+
+- **Status:** idea
+- **Priority:** unknown
+- **Size:** quick
+- **Depends on:** none
+- **Tags:** ui, bug
+
+At 375px wide the club nav bar (`app/templates/base.html`) is wider than the
+screen, so every club page scrolls sideways a little. The bar is a single
+non-wrapping flex row (`px-6 gap-6`) holding the club name, Books, Results,
+Members, About, Admin (admins only), and the "name · Log out" span pushed
+right with `ml-auto`. That last span gets squeezed until it wraps
+word-by-word and spills past the right edge. Measured with the run-bookclub
+driver on 2026-10-06: about 395px wide for a regular member and 465px for an
+admin, on Books, Results and the club home page alike.
+
+Possible approaches: let the row wrap (`flex-wrap`, smaller gaps under `sm`),
+move the user/logout span to its own line on small screens, or collapse the
+links into a menu. The club name may also need to shrink or truncate.
+
+### Acceptance criteria
+- [ ] No horizontal page scroll at 375px for a member or an admin
+- [ ] Desktop layout unchanged
