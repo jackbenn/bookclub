@@ -37,6 +37,13 @@ def _generate_otp(length: int = 6) -> str:
     return "".join(random.choices(string.digits, k=length))
 
 
+def _is_expired(expires_at: datetime) -> bool:
+    # SQLite DateTime columns come back naive; the stored values are UTC.
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    return expires_at <= datetime.now(timezone.utc)
+
+
 def create_signed_token(user_id: int) -> str:
     return _serializer.dumps(user_id, salt="magic-link")
 
@@ -86,7 +93,7 @@ async def consume_magic_token(token: str, db: AsyncSession) -> User | None:
     if row.used_at is not None:
         log.warning("magic-link failed: already used at %s (user_id=%s)", row.used_at, user_id)
         return None
-    if row.expires_at <= datetime.now(timezone.utc):
+    if _is_expired(row.expires_at):
         log.warning("magic-link failed: expired at %s (user_id=%s)", row.expires_at, user_id)
         return None
 
@@ -122,7 +129,7 @@ async def consume_otp(email: str, club_id: int, otp: str, db: AsyncSession) -> U
     if row.used_at is not None:
         log.warning("otp failed: already used at %s (email=%s)", row.used_at, email)
         return None
-    if row.expires_at <= datetime.now(timezone.utc):
+    if _is_expired(row.expires_at):
         log.warning("otp failed: expired at %s (email=%s)", row.expires_at, email)
         return None
 
